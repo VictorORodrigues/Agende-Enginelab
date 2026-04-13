@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:15
+    container_name: db_enginelab
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_DB=agende_db
+      - POSTGRES_USER=usuario_ufc
+      - POSTGRES_PASSWORD=senha_forte
+    ports:
+      - "5432:5432"
+
+volumes:
+  postgres_data:
