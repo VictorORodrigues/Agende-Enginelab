@@ -1,0 +1,19 @@
+# Ambientes Virtuais
+venv/
+env/
+.venv/
+
+# Segredos e Configurações
+.env
+
+# Banco de dados local (Docker cuida do Postgres, mas o SQLite pode aparecer)
+db.sqlite3
+*.sqlite3
+
+# Python cache
+__pycache__/
+*.pyc
+
+# IDEs
+.vscode/
+.idea/
