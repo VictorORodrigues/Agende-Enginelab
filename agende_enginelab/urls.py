@@ -17,7 +17,6 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from core.views import registro #importe sua view de registro
-
 from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth import views as auth_views # Importe as views prontas do Django
@@ -25,14 +24,9 @@ from core.views import registro
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    
-    # Agora a raiz ('') é a tela de login nativa do Django
     path('', auth_views.LoginView.as_view(), name='login'), 
-    
     path('accounts/registro/', registro, name='registro'),
     path('accounts/', include('django.contrib.auth.urls')),
-    
-    # Mude a dashboard para outra rota, ex: /home/ ou /dashboard/
-    path('dashboard/', include('core.urls')), 
+    path('index/', include('core.urls')), 
 ]
 

@@ -8,6 +8,20 @@
                 <h4>Login EngineLab UFC</h4>
             </div>
             <div class="card-body">
+                
+                {# BLOCO DE MENSAGEM DE ERRO #}
+                {% if form.errors or form.non_field_errors %}
+                    <div class="alert alert-danger p-2" role="alert">
+                        <small>
+                            {% if form.non_field_errors %}
+                                {{ form.non_field_errors|striptags }}
+                            {% else %}
+                                Usuário ou senha incorretos.
+                            {% endif %}
+                        </small>
+                    </div>
+                {% endif %}
+
                 <form method="post">
                     {% csrf_token %}
                     <div class="mb-3">

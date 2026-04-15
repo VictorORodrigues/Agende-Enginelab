@@ -1,30 +1,93 @@
 {% extends "core/base.html" %}
 
 {% block content %}
-<div class="row justify-content-center mt-5">
-    <div class="col-md-4">
-        <div class="card shadow">
-            <div class="card-header bg-primary text-white text-center">
-                <h4>Cadastro EngineLab UFC</h4>
-            </div>
-            <div class="card-body">
-                <form method="post">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        {{ form.username.label_tag }}
-                        <input type="text" name="username" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        {{ form.password.label_tag }}
-                        <input type="password" name="password" class="form-control" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100">Cadastrar</button>
-                </form>
-            </div>
-            <div class="card-footer text-center">
-                <small>Já possui conta? <a href="{% url 'login' %}">Entrar</a></small>
+<div class="container">
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <h4 class="mb-0">Criar Conta - EngineLab</h4>
+                </div>
+                <div class="card-body p-4">
+                    
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.non_field_errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        {% for field in form %}
+                            <div class="mb-3">
+                                <label for="{{ field.id_for_label }}" class="form-label fw-bold">
+                                    {{ field.label }}
+                                </label>
+                                
+                                {# Renderiza o input com as classes do Bootstrap #}
+                                <input type="{{ field.field.widget.input_type }}" 
+                                       name="{{ field.html_name }}" 
+                                       id="{{ field.id_for_label }}"
+                                       class="form-control {% if field.errors %}is-invalid{% endif %}"
+                                       placeholder="{{ field.label }}"
+                                       {% if field.value %}value="{{ field.value }}"{% endif %}
+                                       required>
+
+                                {# Texto de ajuda (ex: Use sua matrícula...) #}
+                                {% if field.help_text %}
+                                    <div class="form-text text-muted small">
+                                        {{ field.help_text|safe }}
+                                    </div>
+                                {% endif %}
+
+                                {# Erros específicos do campo #}
+                                {% for error in field.errors %}
+                                    <div class="invalid-feedback">
+                                        {{ error }}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endfor %}
+
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                Cadastrar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer text-center bg-light py-3">
+                    <span>Já possui uma conta? <a href="{% url 'login' %}" class="text-decoration-none">Entrar agora</a></span>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const matriculaInput = document.getElementById('id_username');
+        if (matriculaInput) {
+            matriculaInput.addEventListener('keypress', function(e) {
+                if (!/[0-9]/.test(e.key)) {
+                    e.preventDefault();
+                }
+            });
+
+            matriculaInput.addEventListener('paste', function(e) {
+                const pasteData = e.clipboardData.getData('text');
+                if (!/^\d+$/.test(pasteData)) {
+                    e.preventDefault();
+                }
+            });
+            
+            matriculaInput.setAttribute('inputmode', 'numeric');
+        }
+    });
+</script>
+
 {% endblock %}
+
