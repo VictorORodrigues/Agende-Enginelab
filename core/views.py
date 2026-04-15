@@ -10,26 +10,49 @@ from .utils import enviar_email_solicitacao_adm, enviar_email_resultado_aluno
 from django.core.mail import send_mail
 from django.utils.encoding import force_bytes, force_str
 from django.contrib.sites.shortcuts import get_current_site
+from django.contrib.auth.models import User
+from django.contrib.auth import login
+from decouple import config
 
 def registro(request):
     if request.method == 'POST':
         form = RegistroForm(request.POST)
         if form.is_valid():
             user = form.save(commit=False)
-            user.is_active = False  # DESATIVA o usuário até ele clicar no link
+            user.is_active = False  # Conta inativa até confirmar e-mail
             user.set_password(form.cleaned_data['senha'])
             user.save()
 
-            # Gerar link de ativação
+            # Gerar dados para o link único
             token = default_token_generator.make_token(user)
             uid = urlsafe_base64_encode(force_bytes(user.pk))
             domain = get_current_site(request).domain
             link = f"http://{domain}/accounts/ativar/{uid}/{token}/"
 
-            # Enviar e-mail
+            # Configuração do E-mail HTML
             assunto = 'Ative sua conta no EngineLab'
-            mensagem = f"Olá {user.first_name}, clique no link para ativar sua conta: {link}"
-            send_mail(assunto, mensagem, 'victor13lcu@gmail.com', [user.email])
+            mensagem_txt = f"Olá {user.first_name}, ative sua conta aqui: {link}"
+            html_content = f"""
+                <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px; border-radius: 10px;">
+                    <h2 style="color: #007bff; text-align: center;">Bem-vindo ao Agende EngineLab!</h2>
+                    <p>Olá <strong>{user.first_name}</strong>,</p>
+                    <p>Para concluir seu cadastro, clique no botão abaixo:</p>
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="{link}" style="background-color: #007bff; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+                            CONFIRMAR E-MAIL
+                        </a>
+                    </div>
+                    <p style="font-size: 0.8em; color: #666;">Se o botão não funcionar: {link}</p>
+                </div>
+            """
+
+            send_mail(
+                assunto,
+                mensagem_txt,
+                config('EMAIL_HOST_USER'),
+                [user.email],
+                html_message=html_content
+            )
 
             return render(request, 'registration/confirmacao_enviada.html')
     else:
@@ -47,8 +70,12 @@ def ativar_conta(request, uidb64, token):
     if user is not None and default_token_generator.check_token(user, token):
         user.is_active = True
         user.save()
-        messages.success(request, "Conta ativada com sucesso! Agora você pode fazer login.")
-        return redirect('login')
+        
+        # LOGA O USUÁRIO AUTOMATICAMENTE
+        login(request, user) 
+        
+        messages.success(request, f"Bem-vindo, {user.first_name}! Sua conta foi ativada com sucesso.")
+        return redirect('index') # Redireciona direto para a página inicial logado
     else:
         return render(request, 'registration/link_invalido.html')
     

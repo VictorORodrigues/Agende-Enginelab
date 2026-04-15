@@ -1,24 +1,35 @@
 from django import forms
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
-from django.core.validators import RegexValidator # Importe o validador de Regex
+from django.core.validators import RegexValidator, MinLengthValidator
 
 class RegistroForm(forms.ModelForm):
-    # Criamos o validador que aceita apenas números (\d+)
     apenas_numeros = RegexValidator(
         regex=r'^\d+$',
         message='A matrícula deve conter apenas números.'
     )
 
-    # Sobrescrevemos o campo username para aplicar o validador e mudar o label
+    # Definindo o campo com a mensagem de erro única personalizada
     username = forms.CharField(
         label="Matrícula",
         validators=[apenas_numeros],
-        help_text=None # Remove aquele texto de "150 caracteres..."
+        help_text=None,
+        error_messages={
+            'unique': "Um usuário com esta matrícula já existe."
+        }
     )
 
-    senha = forms.CharField(widget=forms.PasswordInput, label="Senha")
-    confirmar_senha = forms.CharField(widget=forms.PasswordInput, label="Confirme a Senha")
+    senha = forms.CharField(
+        widget=forms.PasswordInput, 
+        label="Senha",
+        validators=[MinLengthValidator(6, message="A senha deve ter pelo menos 6 caracteres.")]
+    )
+    
+    confirmar_senha = forms.CharField(
+        widget=forms.PasswordInput, 
+        label="Confirme a Senha"
+    )
+    
     first_name = forms.CharField(label="Nome Completo", required=True)
 
     class Meta:
@@ -28,12 +39,20 @@ class RegistroForm(forms.ModelForm):
             'first_name': 'Nome Completo',
             'email': 'E-mail',
         }
+        # Você pode manter ou remover o error_messages daqui, 
+        # mas o definido acima no campo tem prioridade.
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if User.objects.filter(email=email).exists():
+            raise ValidationError("Este e-mail já está cadastrado no sistema.")
+        return email
 
     def clean(self):
         cleaned_data = super().clean()
         senha = cleaned_data.get("senha")
         confirmar_senha = cleaned_data.get("confirmar_senha")
 
-        if senha != confirmar_senha:
+        if senha and confirmar_senha and senha != confirmar_senha:
             raise ValidationError("As senhas não conferem.")
         return cleaned_data

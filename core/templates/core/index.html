@@ -2,8 +2,6 @@
 
 {% block content %}
     <h1>Painel de Equipamentos</h1>
-    <p>Se você está vendo isso, o Django carregou o template!</p>
-    
     <ul>
     {% for eq in equipamentos %}
         <li>{{ eq.nome }} - {{ eq.status }}</li>

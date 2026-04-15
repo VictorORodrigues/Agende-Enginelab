@@ -9,4 +9,5 @@ urlpatterns = [
     path('solicitar/<int:eq_id>/', views.solicitar_emprestimo, name='solicitar'),
     path('accounts/ativar/<uidb64>/<token>/', views.ativar_conta, name='ativar_conta'),
     
+    
 ]
