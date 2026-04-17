@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .forms import RegistroForm
 from django.contrib import messages
+from django.template.loader import render_to_string
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.contrib.auth.decorators import login_required
 from .models import Equipamento, Emprestimo, FilaEspera
@@ -29,34 +30,32 @@ def registro(request):
             domain = get_current_site(request).domain
             link = f"http://{domain}/accounts/ativar/{uid}/{token}/"
 
-            # Configuração do E-mail HTML
+            # Prepara o conteúdo HTML usando o template externo
+            contexto = {
+                'nome': user.first_name,
+                'link': link,
+            }
+            html_content = render_to_string('emails/email_ativacao.html', contexto)
+
+            # Envia o e-mail
             assunto = 'Ative sua conta no EngineLab'
             mensagem_txt = f"Olá {user.first_name}, ative sua conta aqui: {link}"
-            html_content = f"""
-                <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px; border-radius: 10px;">
-                    <h2 style="color: #007bff; text-align: center;">Bem-vindo ao Agende EngineLab!</h2>
-                    <p>Olá <strong>{user.first_name}</strong>,</p>
-                    <p>Para concluir seu cadastro, clique no botão abaixo:</p>
-                    <div style="text-align: center; margin: 30px 0;">
-                        <a href="{link}" style="background-color: #007bff; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
-                            CONFIRMAR E-MAIL
-                        </a>
-                    </div>
-                    <p style="font-size: 0.8em; color: #666;">Se o botão não funcionar: {link}</p>
-                </div>
-            """
-
+            
             send_mail(
                 assunto,
                 mensagem_txt,
                 config('EMAIL_HOST_USER'),
                 [user.email],
-                html_message=html_content
+                html_message=html_content 
             )
 
             return render(request, 'registration/confirmacao_enviada.html')
     else:
+        # Se for um GET, inicia o formulário vazio
         form = RegistroForm()
+    
+    # Esta linha fora do "if form.is_valid" garante que se o formulário tiver erros, 
+    # a página recarregue mostrando os erros (como matrícula duplicada).
     return render(request, 'registration/registro.html', {'form': form})
 
 # --- VIEW DE ATIVAÇÃO ---
@@ -71,14 +70,13 @@ def ativar_conta(request, uidb64, token):
         user.is_active = True
         user.save()
         
-        # LOGA O USUÁRIO AUTOMATICAMENTE
+        # Loga o usuário automaticamente após ativar
         login(request, user) 
         
         messages.success(request, f"Bem-vindo, {user.first_name}! Sua conta foi ativada com sucesso.")
-        return redirect('index') # Redireciona direto para a página inicial logado
+        return redirect('index')
     else:
         return render(request, 'registration/link_invalido.html')
-    
 
 # --- PAINEL PRINCIPAL ---
 @login_required
@@ -111,21 +109,18 @@ def solicitar_emprestimo(request, equipamento_id):
 
     return render(request, 'core/confirmar_solicitacao.html', {'equipamento': equipamento})
 
-# --- ADMINISTRADOR APROVA (VIA E-MAIL OU LINK) ---
+# --- ADMINISTRADOR APROVA ---
 @staff_member_required
 def aprovar_emprestimo(request, pk):
     emprestimo = get_object_or_404(Emprestimo, pk=pk)
     
-    # Atualiza o Empréstimo
     emprestimo.status = 'ativo'
     emprestimo.save()
     
-    # Atualiza o Equipamento para não aparecer como disponível
     equipamento = emprestimo.equipamento
     equipamento.status = 'emprestado'
     equipamento.save()
     
-    # Notifica o aluno da aprovação
     try:
         enviar_email_resultado_aluno(emprestimo, 'ativo')
     except Exception as e:
