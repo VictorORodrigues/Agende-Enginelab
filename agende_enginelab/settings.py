@@ -34,12 +34,10 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 
-# O config('NOME') busca o valor dentro do seu arquivo .env
 EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 
 DEFAULT_FROM_EMAIL = f'EngineLab UFC <{EMAIL_HOST_USER}>'
-# Application definition
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -48,7 +46,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'core'
+    'widget_tweaks',
+    'account',
+    'appointment',
 ]
 
 MIDDLEWARE = [
@@ -64,7 +64,7 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'agende_enginelab.urls'
 
 LOGIN_URL = '/accounts/login/' 
-LOGIN_REDIRECT_URL = 'index'
+LOGIN_REDIRECT_URL = 'appointment:home'
 LOGOUT_REDIRECT_URL = 'login'
 
 TEMPLATES = [

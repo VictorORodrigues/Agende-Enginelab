@@ -1,0 +1,89 @@
+{% comment %} acc/templates/emails/email_ativacao.html {% endcomment %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ative sua conta - EngineLab</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f7f6; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
+    <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff; margin-top: 20px; border-radius: 8px 8px 0 0; overflow: hidden;">
+        
+        <tr>
+            <td align="center" style="padding: 20px; background-color: #ffffff; border-bottom: 1px solid #e1e8ed;">
+                <span style="font-size: 24px; font-weight: bold; color: #1a73e8; text-decoration: none;">
+                    🔧 Agende EngineLab
+                </span>
+            </td>
+        </tr>
+
+        <tr>
+            <td align="center" style="padding: 40px 30px 20px 30px;">
+                
+        <div style="margin-bottom: 10px; text-align: center;">
+            <img src="https://i.ibb.co/qMTLq0pC/vecteezy-insurance-policy-shield-symbol-design-13568745-1.jpg" 
+                alt="Segurança" 
+                width="80"
+                style="width: 150px; height: auto; display: block; margin: 0 auto; border: 0; outline: none; text-decoration: none;">
+        </div>
+                
+                <h1 style="color: #1a73e8; font-size: 28px; margin: 0 0 10px 0; font-weight: 600; text-align: center;">Verifique Sua Conta</h1>
+                <p style="color: #4a4a4a; font-size: 16px; margin: 0 0 20px 0; text-align: center;">Olá, <strong>{{ nome }}</strong>!</p>
+                
+                <p style="color: #718096; font-size: 15px; line-height: 1.6; margin: 0 0 30px 0; text-align: center;">
+                    Para finalizar a configuração da sua conta no Agende EngineLab e desbloquear todas as funcionalidades, precisamos verificar sua identidade. Isso garante o nível mais alto de segurança para o seu acesso e protege suas informações. Clique no botão abaixo para verificar seu endereço de e-mail.
+                </p>
+
+                <table align="center" border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 40px;">
+                    <tr>
+                        <td align="center" bgcolor="#1a73e8" style="border-radius: 5px;">
+                            <a href="{{ link }}" target="_blank" style="font-size: 16px; font-weight: bold; color: #ffffff; text-decoration: none; padding: 15px 30px; display: inline-block;">
+                                Verificar meu e-mail
+                            </a>
+                        </td>
+                    </tr>
+                </table>
+
+                <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 0 0 30px 0;">
+
+                <h2 style="color: #1a73e8; font-size: 20px; margin: 0 0 20px 0; font-weight: 600; text-align: center;">Por que a Verificação Importa</h2>
+                
+                <table width="100%" border="0" cellpadding="0" cellspacing="0" style="text-align: center;">
+                    <tr>
+                        <td style="padding-bottom: 20px;">
+                            <p style="color: #4a4a4a; font-size: 16px; margin: 0 0 5px 0; font-weight: 600;">Segurança Aprimorada</p>
+                            <p style="color: #718096; font-size: 14px; margin: 0 auto; line-height: 1.5; max-width: 400px;">A verificação de identidade ajuda a prevenir acesso não autorizado e protege seu histórico de agendamentos.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding-bottom: 20px;">
+                            <p style="color: #4a4a4a; font-size: 16px; margin: 0 0 5px 0; font-weight: 600;">Conformidade Acadêmica</p>
+                            <p style="color: #718096; font-size: 14px; margin: 0 auto; line-height: 1.5; max-width: 400px;">Este processo nos ajuda a cumprir com as normas de uso do laboratório e garante uma experiência segura para todos os alunos e docentes.</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+
+        <tr>
+            <td align="center" style="padding: 40px; background-color: #0d1117; color: #ffffff; border-radius: 0 0 8px 8px;">
+                <span style="font-size: 20px; font-weight: bold; color: #ffffff; display: block; margin-bottom: 20px;">
+                    🔧 EngineLab UFC
+                </span>
+                
+                <div style="margin-bottom: 30px;">
+                    <a href="#" style="color: #ffffff; text-decoration: none; margin: 0 10px; font-size: 20px;">🌐</a>
+                    <a href="#" style="color: #ffffff; text-decoration: none; margin: 0 10px; font-size: 20px;">📸</a>
+                    <a href="#" style="color: #ffffff; text-decoration: none; margin: 0 10px; font-size: 20px;">💻</a>
+                </div>
+
+                <p style="color: #9ca3af; font-size: 12px; margin: 0; line-height: 1.8;">
+                    Este é um e-mail automático enviado pelo sistema Agende EngineLab.<br>
+                    Campus da UFC em Crateús.<br>
+                    Não responda a este e-mail.
+                </p>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

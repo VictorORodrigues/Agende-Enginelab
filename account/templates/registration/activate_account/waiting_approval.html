@@ -1,0 +1,12 @@
+{% extends 'account/base.html' %}
+
+{% block content %}
+<div class="container mt-5 text-center">
+    <h2>E-mail Confirmado com Sucesso!</h2>
+    <p class="lead">Olá, <strong>{{ user.first_name }}</strong>. Sua solicitação de acesso foi enviada aos administradores.</p>
+    <div class="alert alert-info">
+        Por favor, aguarde a aprovação do seu cadastro. Você receberá um aviso assim que puder acessar o sistema.
+    </div>
+    <a href="{% url 'login' %}" class="btn btn-primary">Voltar para o Login</a>
+</div>
+{% endblock %}

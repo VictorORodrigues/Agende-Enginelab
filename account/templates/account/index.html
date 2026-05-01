@@ -1,0 +1,12 @@
+{% extends "a/base.html" %}
+
+{% block content %}
+    <h1>Painel de Equipamentos</h1>
+    <ul>
+    {% for eq in equipamentos %}
+        <li>{{ eq.nome }} - {{ eq.status }}</li>
+    {% empty %}
+        <li>Nenhum equipamento cadastrado no banco ainda.</li>
+    {% endfor %}
+    </ul>
+{% endblock %}
