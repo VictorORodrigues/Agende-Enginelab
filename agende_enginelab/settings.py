@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
-from decouple import config
+from decouple import config, Csv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,13 +20,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-nc&#lu%z7lqnf0gl3jqpv8#z)t+1*ek5)kk7y0l=gakbzxf!4_'
+DEBUG = config('DEBUG', default=False, cast=bool)
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+_env_secret_key = config('SECRET_KEY', default='')
+if _env_secret_key:
+    SECRET_KEY = _env_secret_key
+elif DEBUG:
+    SECRET_KEY = 'dev-only-secret-key-change-me-in-env'
+else:
+    raise RuntimeError('SECRET_KEY não configurada no ambiente')
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv())
 
 # Configurações de E-mail lendo do .env
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -63,14 +67,19 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'agende_enginelab.urls'
 
-LOGIN_URL = '/accounts/login/' 
+LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'appointment:home'
 LOGOUT_REDIRECT_URL = 'login'
+
+ACCOUNT_MAX_FAILED_LOGINS_PER_MINUTE = config('ACCOUNT_MAX_FAILED_LOGINS_PER_MINUTE', default=5, cast=int)
+ACCOUNT_LOCKOUT_THRESHOLD = config('ACCOUNT_LOCKOUT_THRESHOLD', default=10, cast=int)
+ACCOUNT_LOCKOUT_SECONDS = config('ACCOUNT_LOCKOUT_SECONDS', default=15 * 60, cast=int)
+ACCOUNT_CAPTCHA_AFTER_FAILS = config('ACCOUNT_CAPTCHA_AFTER_FAILS', default=3, cast=int)
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -88,16 +97,53 @@ WSGI_APPLICATION = 'agende_enginelab.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASES = {
+_db_engine = config('DB_ENGINE', default='')
+if not _db_engine:
+    _db_engine = 'django.db.backends.sqlite3' if DEBUG else 'django.db.backends.postgresql'
+
+if _db_engine == 'django.db.backends.sqlite3':
+    _sqlite_name = config('DB_NAME', default='')
+    DATABASES = {
+        'default': {
+            'ENGINE': _db_engine,
+            'NAME': _sqlite_name or (BASE_DIR / 'db.sqlite3'),
+        }
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': _db_engine,
+            'NAME': config('DB_NAME', default=''),
+            'USER': config('DB_USER', default=''),
+            'PASSWORD': config('DB_PASSWORD', default=''),
+            'HOST': config('DB_HOST', default='localhost'),
+            'PORT': config('DB_PORT', default='5432'),
+        }
+    }
+
+    if not DEBUG:
+        for _k in ('NAME', 'USER', 'PASSWORD'):
+            if not DATABASES['default'][_k]:
+                raise RuntimeError(f'DB_{_k} não configurado no ambiente')
+
+CACHES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'agende_db',
-        'USER': 'usuario_ufc',
-        'PASSWORD': 'senha_forte',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'agende_enginelab_default',
     }
 }
+
+SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=False, cast=bool)
+SESSION_COOKIE_SECURE = config('SESSION_COOKIE_SECURE', default=SECURE_SSL_REDIRECT, cast=bool)
+CSRF_COOKIE_SECURE = config('CSRF_COOKIE_SECURE', default=SECURE_SSL_REDIRECT, cast=bool)
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
+SECURE_REFERRER_POLICY = 'same-origin'
+
+USE_X_FORWARDED_HOST = config('USE_X_FORWARDED_HOST', default=False, cast=bool)
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https') if config('USE_SECURE_PROXY_SSL_HEADER', default=False, cast=bool) else None
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators

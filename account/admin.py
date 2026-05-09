@@ -9,17 +9,22 @@ class PerfilInline(admin.StackedInline):
     can_delete = False
     verbose_name_plural = 'Informações de Perfil'
     fk_name = 'user'
+    fields = ('status', 'tipo', 'matricula', 'telefone', 'setor')
 
 # --- PERSONALIZAÇÃO DO USER ADMIN ---
 class UserAdmin(BaseUserAdmin):
     inlines = (PerfilInline, )
     
     # Exibe o tipo de usuário e setor diretamente na lista de usuários
-    list_display = ('username', 'email', 'first_name', 'get_tipo', 'get_setor', 'is_staff')
+    list_display = ('username', 'email', 'first_name', 'get_status', 'get_tipo', 'get_setor', 'is_active', 'is_staff')
     
     def get_tipo(self, instance):
         return instance.perfil.get_tipo_display()
     get_tipo.short_description = 'Tipo de Usuário'
+
+    def get_status(self, instance):
+        return instance.perfil.get_status_display()
+    get_status.short_description = 'Status'
 
     def get_setor(self, instance):
         return instance.perfil.setor.nome if instance.perfil.setor else '-'

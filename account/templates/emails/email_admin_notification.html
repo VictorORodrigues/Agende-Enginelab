@@ -1,4 +1,3 @@
-{% autoescape off %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -25,7 +24,7 @@
     <ul>
         <li><strong>Nome:</strong> {{ user.get_full_name }}</li>
         <li><strong>Email:</strong> {{ user.email }}</li>
-        <li><strong>Telefone:</strong> {{ user.telefone }}</li>
+        <li><strong>Telefone:</strong> {{ user.perfil.telefone|default:"Não informado" }}</li>
         <li><strong>Matrícula:</strong> {{ user.perfil.matricula|default:"Não informada" }}</li>
     </ul>
 
@@ -36,4 +35,3 @@
     <p>Ou copie e cole o link: {{ admin_url }}</p>
 </body>
 </html>
-{% endautoescape %}

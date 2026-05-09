@@ -1,14 +1,26 @@
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 
-# Create your views here.
-from django.shortcuts import render
-from django.contrib.auth.decorators import login_required
+from account.models import Perfil
 
 @login_required
 def home(request):
-    # Aqui você já pode filtrar o que cada um vê
-    if request.user.perfil.eh_aluno:
-        return render(request, 'appointment/studant_home.html')
-    elif request.user.perfil.eh_subadm:
-        return render(request, 'appointment/subadm_home.html')
-    return render(request, 'appointment/admin_home.html')
+    try:
+        perfil = request.user.perfil
+    except Perfil.DoesNotExist:
+        perfil = Perfil.objects.create(user=request.user)
+
+    is_admin = perfil.eh_admin
+    is_subadm = perfil.eh_subadm or is_admin
+    is_student = perfil.eh_aluno
+
+    return render(
+        request,
+        'appointment/dashboard.html',
+        {
+            'perfil': perfil,
+            'is_student': is_student,
+            'is_subadm': is_subadm,
+            'is_admin': is_admin,
+        },
+    )

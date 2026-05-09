@@ -5,6 +5,7 @@ env/
 
 # Segredos e Configurações
 .env
+login_admin.txt
 
 # Banco de dados local (Docker cuida do Postgres, mas o SQLite pode aparecer)
 db.sqlite3
