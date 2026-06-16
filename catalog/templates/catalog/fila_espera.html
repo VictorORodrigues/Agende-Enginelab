@@ -1,0 +1,50 @@
+{% extends "account/base_dash.html" %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Minha fila de espera</div>
+    <div class="page-subtitle">Acompanhe sua posição e aguarde a liberação</div>
+  </div>
+  <a class="btn" href="{% url 'equipamentos' %}">Ver equipamentos</a>
+</div>
+
+{% if entradas %}
+  {% for entrada in entradas %}
+  <div class="card" style="margin-bottom:16px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div style="font-size:14px;font-weight:500">{{ entrada.fila.item }}</div>
+      <span class="badge badge-blue">Posição: {{ entrada.posicao }}º</span>
+    </div>
+    <div class="card-sm" style="background:var(--surface2);border:none">
+      <div class="detail-row">
+        <span class="detail-key">Status do item</span>
+        <span class="detail-val">
+          {% if entrada.fila.item.status == 'disponivel' %}
+          <span class="badge badge-green">Disponível</span>
+          {% else %}
+          <span class="badge badge-amber">Emprestado</span>
+          {% endif %}
+        </span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-key">Entrou na fila</span>
+        <span class="detail-val">{{ entrada.fila.data_solicitacao|date:"d/m/Y" }}</span>
+      </div>
+    </div>
+    <div style="margin-top:14px">
+      <form method="post" action="{% url 'sair_fila' entrada.fila.pk %}" onsubmit="return confirm('Sair da fila de espera?');">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-sm btn-danger">Sair da fila</button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+{% else %}
+  <div class="card">
+    <div class="empty">
+      <div class="empty-icon">⏳</div>
+      <div class="empty-title">Você não está em nenhuma fila de espera.</div>
+    </div>
+  </div>
+{% endif %}
+{% endblock %}

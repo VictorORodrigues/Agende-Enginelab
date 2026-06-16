@@ -1,0 +1,130 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <title>{% block title %}EngineLab UFC{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'account/css/base.css' %}">
+  <link rel="stylesheet" href="{% static 'account/css/dash.css' %}">
+</head>
+<body>
+  <div class="topbar">
+    <a class="topbar-brand" href="{% url 'appointment:home' %}"><span>L</span> EngineLab UFC</a>
+    <div class="topbar-actions">
+      <div class="profile-wrap">
+        <button class="topbar-user profile-btn" id="profileBtn" type="button">
+          <div class="avatar">{{ request.user.first_name|slice:":1"|upper|default:request.user.username|slice:":1"|upper }}</div>
+          {{ request.user.get_full_name|default:request.user.username }}
+          <svg class="chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4l4 4 4-4"/></svg>
+        </button>
+        <div class="profile-dropdown" id="profileDropdown">
+          <div>
+            <div class="detail-row">
+              <span class="detail-key">Matrícula</span>
+              <span class="detail-val">{{ request.user.perfil.matricula|default:request.user.username }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-key">Perfil</span>
+              <span class="detail-val">{{ request.user.perfil.get_tipo_display }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-key">Status</span>
+              <span class="detail-val">
+                {% with s=request.user.perfil.status %}
+                <span class="badge {% if s == 'ATIVO' %}badge-green{% elif s == 'REJEITADO' %}badge-red{% else %}badge-amber{% endif %}">{{ request.user.perfil.get_status_display }}</span>
+                {% endwith %}
+              </span>
+            </div>
+          </div>
+          <div style="margin-top:12px">
+            <a class="btn btn-sm" href="{% url 'password_reset' %}">Redefinir senha</a>
+          </div>
+        </div>
+      </div>
+      <a class="btn btn-sm" href="{% url 'logout' %}">Sair</a>
+    </div>
+  </div>
+
+  <div class="layout">
+    <nav class="sidebar">
+      <div style="padding:8px 6px">
+        <div class="sidebar-section">Geral</div>
+        <a class="nav-item {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'appointment:home' %}">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+          Dashboard
+        </a>
+        <a class="nav-item {% if request.resolver_match.url_name == 'meus_agendamentos' %}active{% endif %}" href="{% url 'appointment:meus_agendamentos' %}">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z"/><path d="M5 6h6M5 9h4"/></svg>
+          Agendamentos
+        </a>
+
+        <div class="sidebar-section">Acervo</div>
+        <a class="nav-item {% if request.resolver_match.url_name == 'equipamentos' %}active{% endif %}" href="{% url 'equipamentos' %}">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="9" rx="1"/><path d="M5 12v2M11 12v2M3 14h10"/></svg>
+          Equipamentos
+        </a>
+        <a class="nav-item {% if request.resolver_match.url_name == 'livros' %}active{% endif %}" href="{% url 'livros' %}">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 2h6v12H2zM9 2h5v12H9z"/></svg>
+          Livros
+        </a>
+        <a class="nav-item {% if request.resolver_match.url_name == 'fila_espera' %}active{% endif %}" href="{% url 'fila_espera' %}">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M2 8h8M2 12h10"/></svg>
+          Fila de espera
+        </a>
+        <a class="nav-item {% if request.resolver_match.url_name == 'meus_emprestimos' %}active{% endif %}" href="{% url 'meus_emprestimos' %}">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z"/><path d="M5 6h6M5 9h4"/></svg>
+          Meus empréstimos
+        </a>
+
+        {% if request.user.perfil.eh_subadm or request.user.perfil.eh_admin %}
+        <div class="sidebar-section">Administração</div>
+        <a class="nav-item {% if request.resolver_match.url_name == 'gerenciar_agendamentos' %}active{% endif %}" href="{% url 'appointment:gerenciar_agendamentos' %}">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 3h12v2H2zM2 7h12v2H2zM2 11h12v2H2z"/></svg>
+          Agendamentos pendentes
+        </a>
+        <a class="nav-item {% if request.resolver_match.url_name == 'admin_emprestimos' %}active{% endif %}" href="{% url 'admin_emprestimos' %}">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z"/><path d="M5 6h6M5 9h4"/></svg>
+          Empréstimos pendentes
+        </a>
+        {% endif %}
+
+        {% if request.user.perfil.eh_admin %}
+        <a class="nav-item {% if request.resolver_match.url_name == 'admin_usuarios' %}active{% endif %}" href="{% url 'admin_usuarios' %}">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="5" r="3"/><path d="M1 14c0-2.76 2.24-5 5-5"/><circle cx="12" cy="9" r="3"/><path d="M9 14v-1a3 3 0 0 1 6 0v1"/></svg>
+          Usuários
+        </a>
+        <a class="nav-item {% if request.resolver_match.url_name == 'admin_subadmins' %}active{% endif %}" href="{% url 'admin_subadmins' %}">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1l1.5 3h3l-2.5 2 1 3L8 7.5 5 9l1-3L3.5 4h3z"/></svg>
+          SubAdmins
+        </a>
+        {% endif %}
+      </div>
+      <div class="nav-spacer"></div>
+    </nav>
+
+    <main class="main">
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+  <script>
+    (function () {
+      var btn = document.getElementById('profileBtn');
+      var menu = document.getElementById('profileDropdown');
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var open = menu.classList.toggle('open');
+        btn.classList.toggle('open', open);
+      });
+      document.addEventListener('click', function () {
+        menu.classList.remove('open');
+        btn.classList.remove('open');
+      });
+    })();
+  </script>
+</body>
+</html>

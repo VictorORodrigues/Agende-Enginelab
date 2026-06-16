@@ -1,0 +1,79 @@
+{% extends "account/base_dash.html" %}
+{% block content %}
+<div class="page-header">
+  <div><div class="page-title">Equipamentos</div></div>
+  {% if pode_gerenciar %}
+  <a class="btn btn-primary" href="{% url 'equipamento_criar' %}">Cadastrar equipamento</a>
+  {% endif %}
+</div>
+
+<form method="get" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+  <select name="categoria" class="form-input" style="width:200px" onchange="this.form.submit()">
+    <option value="">Todas as categorias</option>
+    {% for categoria in categorias %}
+    <option value="{{ categoria.pk }}" {% if categoria_selecionada == categoria.pk|stringformat:"s" %}selected{% endif %}>{{ categoria.nome }}</option>
+    {% endfor %}
+  </select>
+  <select name="status" class="form-input" style="width:160px" onchange="this.form.submit()">
+    <option value="">Todos os status</option>
+    {% for valor, rotulo in status_choices %}
+    <option value="{{ valor }}" {% if status_selecionado == valor %}selected{% endif %}>{{ rotulo }}</option>
+    {% endfor %}
+  </select>
+</form>
+
+<div class="card" style="padding:0;overflow:hidden">
+  {% if equipamentos %}
+  <table>
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>Identificador</th>
+        <th>Categoria</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for equipamento in equipamentos %}
+      <tr>
+        <td>{{ equipamento.nome }}</td>
+        <td>{{ equipamento.identificador }}</td>
+        <td>{{ equipamento.categoria.nome }}</td>
+        <td>
+          {% if equipamento.status == 'disponivel' %}
+          <span class="badge badge-green">Disponível</span>
+          {% else %}
+          <span class="badge badge-amber">Emprestado</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if pode_gerenciar %}
+          <a class="btn btn-sm" href="{% url 'equipamento_editar' equipamento.pk %}">Editar</a>
+          {% endif %}
+          {% if request.user.perfil.eh_admin %}
+          <a class="btn btn-sm btn-danger" href="{% url 'equipamento_excluir' equipamento.pk %}">Excluir</a>
+          {% endif %}
+          {% if equipamento.status == 'disponivel' %}
+          <a class="btn btn-sm btn-primary" href="{% url 'solicitar_emprestimo' equipamento.pk %}">Solicitar empréstimo</a>
+          {% elif equipamento.pk in minhas_filas_ids %}
+          <span class="badge badge-blue">Na fila de espera</span>
+          {% else %}
+          <form method="post" action="{% url 'entrar_fila' equipamento.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm">Entrar na fila</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">
+    <div class="empty-icon">🧰</div>
+    <div class="empty-title">Nenhum equipamento encontrado.</div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends "account/base_dash.html" %}
+{% block content %}
+<div class="page-header">
+  <div><div class="page-title">Meus empréstimos</div></div>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card"><div class="stat-label">Pendentes</div><div class="stat-value">{{ contadores.pendente }}</div></div>
+  <div class="stat-card"><div class="stat-label">Ativos</div><div class="stat-value">{{ contadores.ativo }}</div></div>
+  <div class="stat-card"><div class="stat-label">Finalizados</div><div class="stat-value">{{ contadores.finalizado }}</div></div>
+  <div class="stat-card"><div class="stat-label">Rejeitados</div><div class="stat-value">{{ contadores.rejeitado }}</div></div>
+</div>
+
+<div class="card" style="padding:0;overflow:hidden">
+  {% if emprestimos %}
+  <table>
+    <thead>
+      <tr>
+        <th>Item</th>
+        <th>Início</th>
+        <th>Devolução prevista</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for emprestimo in emprestimos %}
+      <tr>
+        <td>{{ emprestimo.item }}</td>
+        <td>{{ emprestimo.data_inicio|date:"d/m/Y" }}</td>
+        <td>{{ emprestimo.data_final|date:"d/m/Y" }}</td>
+        <td>
+          {% if emprestimo.status == 'ativo' %}
+          <span class="badge badge-blue">Ativo</span>
+          {% elif emprestimo.status == 'pendente' %}
+          <span class="badge badge-amber">Pendente</span>
+          {% elif emprestimo.status == 'finalizado' %}
+          <span class="badge badge-gray">Finalizado</span>
+          {% else %}
+          <span class="badge badge-red">Rejeitado</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">
+    <div class="empty-icon">📦</div>
+    <div class="empty-title">Você ainda não tem empréstimos.</div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

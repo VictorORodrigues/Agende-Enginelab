@@ -1,0 +1,50 @@
+{% extends "account/base_dash.html" %}
+{% load widget_tweaks %}
+{% block content %}
+<div class="page-header">
+  <div><div class="page-title">{% if modo == 'criar' %}Criar SubAdmin{% else %}Editar SubAdmin: {{ subadmin.user.get_full_name|default:subadmin.user.username }}{% endif %}</div></div>
+  <a class="btn" href="{% url 'admin_subadmins' %}">Voltar</a>
+</div>
+
+<div class="card" style="max-width:480px">
+  {% if form.non_field_errors %}
+  <div class="alert alert-error">
+    {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+  </div>
+  {% endif %}
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% for field in form %}
+
+    {% if modo == 'editar' and field.html_name == 'senha' %}
+    <div class="divider"></div>
+    <div class="form-label" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--text3);margin-bottom:10px">Alterar senha <span style="font-weight:400;text-transform:none;letter-spacing:0">(deixe em branco para manter)</span></div>
+    {% endif %}
+
+    {% if field.html_name == 'escopo_equipamento' %}
+    <div class="divider"></div>
+    <div class="form-label" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--text3);margin-bottom:10px">Permissões</div>
+    {% endif %}
+
+    {% if field.field.widget.input_type == 'checkbox' %}
+    <div class="form-check">
+      {{ field }}
+      <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+    </div>
+    {% else %}
+    <div class="form-group">
+      <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+      {{ field|add_class:"form-input" }}
+    </div>
+    {% endif %}
+    {% for error in field.errors %}
+    <div class="alert alert-error">{{ error }}</div>
+    {% endfor %}
+
+    {% endfor %}
+    <div style="margin-top:16px">
+      <button type="submit" class="btn btn-primary">Salvar</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

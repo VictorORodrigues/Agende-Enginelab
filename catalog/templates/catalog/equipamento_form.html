@@ -1,0 +1,29 @@
+{% extends "account/base_dash.html" %}
+{% load widget_tweaks %}
+{% block content %}
+<div class="page-header">
+  <div><div class="page-title">{% if modo == 'criar' %}Cadastrar equipamento{% else %}Editar equipamento{% endif %}</div></div>
+  <a class="btn" href="{% url 'equipamentos' %}">Voltar</a>
+</div>
+
+<div class="card" style="max-width:480px">
+  {% if form.non_field_errors %}
+  <div class="alert alert-error">
+    {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+  </div>
+  {% endif %}
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% for field in form %}
+    <div class="form-group">
+      <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+      {{ field|add_class:"form-input" }}
+      {% for error in field.errors %}
+      <div class="alert alert-error">{{ error }}</div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+    <button type="submit" class="btn btn-primary">Salvar</button>
+  </form>
+</div>
+{% endblock %}

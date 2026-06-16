@@ -1,0 +1,20 @@
+{% extends "account/base_dash.html" %}
+{% block content %}
+<div class="modal-overlay open">
+  <div class="modal">
+    <div class="modal-title">Solicitar empréstimo</div>
+    <div class="modal-sub">Você está solicitando o empréstimo de <strong>{{ item }}</strong>.</div>
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="form-label" for="data_final">Data de devolução prevista</label>
+        <input type="date" name="data_final" id="data_final" class="form-input" required>
+      </div>
+      <div class="modal-actions">
+        <a class="btn" href="{% if tipo == 'equipamento' %}{% url 'equipamentos' %}{% else %}{% url 'livros' %}{% endif %}">Cancelar</a>
+        <button type="submit" class="btn btn-primary">Solicitar</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

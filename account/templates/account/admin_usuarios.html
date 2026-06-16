@@ -1,0 +1,50 @@
+{% extends "account/base_dash.html" %}
+{% block content %}
+<div class="page-header">
+  <div><div class="page-title">Usuários</div></div>
+  <a class="btn" href="{% url 'admin_usuarios_pendentes' %}">Ver pendentes</a>
+</div>
+
+<form method="get" style="margin-bottom:16px">
+  <select name="status" class="form-input" style="width:200px" onchange="this.form.submit()">
+    <option value="">Todos os status</option>
+    {% for valor, rotulo in status_choices %}
+    <option value="{{ valor }}" {% if status_selecionado == valor %}selected{% endif %}>{{ rotulo }}</option>
+    {% endfor %}
+  </select>
+</form>
+
+<div class="card" style="padding:0;overflow:hidden">
+  {% if perfis %}
+  <table>
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>Matrícula</th>
+        <th>E-mail</th>
+        <th>Tipo</th>
+        <th>Status</th>
+        <th>Setor</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for perfil in perfis %}
+      <tr>
+        <td>{{ perfil.user.get_full_name|default:perfil.user.username }}</td>
+        <td>{{ perfil.matricula|default:"-" }}</td>
+        <td>{{ perfil.user.email }}</td>
+        <td>{{ perfil.get_tipo_display }}</td>
+        <td>{{ perfil.get_status_display }}</td>
+        <td>{{ perfil.setor.nome|default:"-" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">
+    <div class="empty-icon">👤</div>
+    <div class="empty-title">Nenhum usuário encontrado.</div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

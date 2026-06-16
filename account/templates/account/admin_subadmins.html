@@ -1,0 +1,46 @@
+{% extends "account/base_dash.html" %}
+{% block content %}
+<div class="page-header">
+  <div><div class="page-title">SubAdmins</div></div>
+  <a class="btn btn-primary" href="{% url 'criar_subadmin' %}">Criar SubAdmin</a>
+</div>
+
+<div class="card" style="padding:0;overflow:hidden">
+  {% if subadmins %}
+  <table>
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>Matrícula</th>
+        <th>E-mail</th>
+        <th>Permissões</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for subadmin in subadmins %}
+      <tr>
+        <td>{{ subadmin.user.get_full_name|default:subadmin.user.username }}</td>
+        <td>{{ subadmin.matricula|default:"-" }}</td>
+        <td>{{ subadmin.user.email }}</td>
+        <td>
+          {% for permissao in subadmin.permissoes.all %}
+          <span class="badge badge-blue">{{ permissao.get_escopo_display }}</span>
+          {% endfor %}
+        </td>
+        <td>
+          <a class="btn btn-sm" href="{% url 'editar_subadmin' subadmin.pk %}">Editar</a>
+          <a class="btn btn-sm btn-danger" href="{% url 'excluir_subadmin' subadmin.pk %}">Excluir</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">
+    <div class="empty-icon">⭐</div>
+    <div class="empty-title">Nenhum SubAdmin cadastrado.</div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

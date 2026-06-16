@@ -1,0 +1,75 @@
+{% extends "account/base_dash.html" %}
+{% block content %}
+<div class="page-header">
+  <div><div class="page-title">Empréstimos</div></div>
+</div>
+
+<form method="get" style="margin-bottom:16px">
+  <select name="status" class="form-input" style="width:200px" onchange="this.form.submit()">
+    <option value="">Todos os status</option>
+    {% for valor, rotulo in status_choices %}
+    <option value="{{ valor }}" {% if status_selecionado == valor %}selected{% endif %}>{{ rotulo }}</option>
+    {% endfor %}
+  </select>
+</form>
+
+<div class="card" style="padding:0;overflow:hidden">
+  {% if emprestimos %}
+  <table>
+    <thead>
+      <tr>
+        <th>Solicitante</th>
+        <th>Item</th>
+        <th>Início</th>
+        <th>Devolução prevista</th>
+        <th>Status</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for emprestimo in emprestimos %}
+      <tr>
+        <td>{{ emprestimo.usuario.get_full_name|default:emprestimo.usuario.username }}</td>
+        <td>{{ emprestimo.item }}</td>
+        <td>{{ emprestimo.data_inicio|date:"d/m/Y" }}</td>
+        <td>{{ emprestimo.data_final|date:"d/m/Y" }}</td>
+        <td>
+          {% if emprestimo.status == 'ativo' %}
+          <span class="badge badge-blue">Ativo</span>
+          {% elif emprestimo.status == 'pendente' %}
+          <span class="badge badge-amber">Pendente</span>
+          {% elif emprestimo.status == 'finalizado' %}
+          <span class="badge badge-gray">Finalizado</span>
+          {% else %}
+          <span class="badge badge-red">Rejeitado</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if emprestimo.status == 'pendente' %}
+          <form method="post" action="{% url 'aprovar_emprestimo' emprestimo.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-success">Aprovar</button>
+          </form>
+          <form method="post" action="{% url 'reprovar_emprestimo' emprestimo.pk %}" onsubmit="return confirm('Reprovar este empréstimo?');">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-danger">Reprovar</button>
+          </form>
+          {% elif emprestimo.status == 'ativo' %}
+          <form method="post" action="{% url 'finalizar_emprestimo' emprestimo.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-primary">Finalizar</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">
+    <div class="empty-icon">📦</div>
+    <div class="empty-title">Nenhum empréstimo encontrado.</div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

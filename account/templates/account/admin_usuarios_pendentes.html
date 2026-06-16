@@ -1,0 +1,52 @@
+{% extends "account/base_dash.html" %}
+{% block content %}
+<div class="page-header">
+  <div><div class="page-title">Usuários pendentes de aprovação</div></div>
+</div>
+
+<div class="card" style="padding:0;overflow:hidden">
+{% if pendentes %}
+  <table>
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>Matrícula</th>
+        <th>E-mail</th>
+        <th>Telefone</th>
+        <th>Setor</th>
+        <th>Cadastrado em</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for perfil in pendentes %}
+      <tr>
+        <td>{{ perfil.user.get_full_name|default:perfil.user.username }}</td>
+        <td>{{ perfil.matricula|default:"-" }}</td>
+        <td>{{ perfil.user.email }}</td>
+        <td>{{ perfil.telefone|default:"-" }}</td>
+        <td>{{ perfil.setor.nome|default:"-" }}</td>
+        <td>{{ perfil.user.date_joined|date:"d/m/Y H:i" }}</td>
+        <td>
+          <form method="post" action="{% url 'aprovar_usuario' perfil.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-success">Aprovar</button>
+          </form>
+          <form method="post" action="{% url 'recusar_usuario' perfil.pk %}"
+                onsubmit="return confirm('Recusar o cadastro de {{ perfil.user.get_full_name|default:perfil.user.username|escapejs }}?');">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-danger">Recusar</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <div class="empty">
+    <div class="empty-icon">👤</div>
+    <div class="empty-title">Nenhum cadastro pendente de aprovação no momento.</div>
+  </div>
+{% endif %}
+</div>
+{% endblock %}

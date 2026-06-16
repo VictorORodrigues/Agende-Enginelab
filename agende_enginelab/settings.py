@@ -18,7 +18,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 # Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 DEBUG = config('DEBUG', default=False, cast=bool)
 
@@ -40,6 +39,7 @@ EMAIL_USE_TLS = True
 
 EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
+EMAIL_ADMIN_LAB = config('EMAIL_ADMIN_LAB', default=EMAIL_HOST_USER)
 
 DEFAULT_FROM_EMAIL = f'EngineLab UFC <{EMAIL_HOST_USER}>'
 

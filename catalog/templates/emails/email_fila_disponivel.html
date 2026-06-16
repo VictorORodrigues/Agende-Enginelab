@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Item disponível</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f7f6;font-family:Arial,sans-serif;">
+  <table align="center" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;background:#ffffff;margin-top:20px;border-radius:8px;overflow:hidden;">
+    <tr>
+      <td style="padding:24px;background:#1a4fd6;color:#ffffff;text-align:center;">
+        <h1 style="margin:0;font-size:26px;">EngineLab UFC</h1>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:32px;">
+        <h2 style="margin-top:0;color:#1a4fd6;">Item disponível</h2>
+        <p>Olá, {{ fila.usuario.first_name }}.</p>
+        <p>O item <strong>{{ item }}</strong> que você aguardava na fila de espera está disponível. Acesse o sistema para solicitar o empréstimo.</p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

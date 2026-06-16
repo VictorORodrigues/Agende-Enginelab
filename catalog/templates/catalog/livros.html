@@ -1,0 +1,74 @@
+{% extends "account/base_dash.html" %}
+{% block content %}
+<div class="page-header">
+  <div><div class="page-title">Livros</div></div>
+  {% if pode_gerenciar %}
+  <a class="btn btn-primary" href="{% url 'livro_criar' %}">Cadastrar livro</a>
+  {% endif %}
+</div>
+
+<form method="get" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+  <select name="categoria" class="form-input" style="width:200px" onchange="this.form.submit()">
+    <option value="">Todas as categorias</option>
+    {% for categoria in categorias %}
+    <option value="{{ categoria.pk }}" {% if categoria_selecionada == categoria.pk|stringformat:"s" %}selected{% endif %}>{{ categoria.nome }}</option>
+    {% endfor %}
+  </select>
+  <select name="status" class="form-input" style="width:160px" onchange="this.form.submit()">
+    <option value="">Todos os status</option>
+    {% for valor, rotulo in status_choices %}
+    <option value="{{ valor }}" {% if status_selecionado == valor %}selected{% endif %}>{{ rotulo }}</option>
+    {% endfor %}
+  </select>
+</form>
+
+<div class="card" style="padding:0;overflow:hidden">
+  {% if livros %}
+  <table>
+    <thead>
+      <tr>
+        <th>Título</th>
+        <th>Autor</th>
+        <th>Categoria</th>
+        <th>Exemplares</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for livro in livros %}
+      <tr>
+        <td>{{ livro.titulo }}</td>
+        <td>{{ livro.autor }}</td>
+        <td>{{ livro.categoria.nome }}</td>
+        <td>{{ livro.exemplares }}</td>
+        <td>
+          {% if livro.status == 'disponivel' %}
+          <span class="badge badge-green">Disponível</span>
+          {% else %}
+          <span class="badge badge-amber">Emprestado</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if pode_gerenciar %}
+          <a class="btn btn-sm" href="{% url 'livro_editar' livro.pk %}">Editar</a>
+          {% endif %}
+          {% if request.user.perfil.eh_admin %}
+          <a class="btn btn-sm btn-danger" href="{% url 'livro_excluir' livro.pk %}">Excluir</a>
+          {% endif %}
+          {% if livro.status == 'disponivel' %}
+          <a class="btn btn-sm btn-primary" href="{% url 'solicitar_livro' livro.pk %}">Solicitar empréstimo</a>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">
+    <div class="empty-icon">📚</div>
+    <div class="empty-title">Nenhum livro encontrado.</div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
