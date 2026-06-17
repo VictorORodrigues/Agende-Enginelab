@@ -7,6 +7,39 @@
   </div>
 </div>
 
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-group">Equipamentos</div>
+    <div class="stat-value">{{ stats.equipamentos_total }}</div>
+    <div class="stat-label">cadastrados</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-group">Equipamentos</div>
+    <div class="stat-value">{{ stats.equipamentos_emprestados }}</div>
+    <div class="stat-label">em empréstimo</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-group">Livros</div>
+    <div class="stat-value">{{ stats.livros_total }}</div>
+    <div class="stat-label">cadastrados</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-group">Livros</div>
+    <div class="stat-value">{{ stats.livros_emprestados }}</div>
+    <div class="stat-label">em empréstimo</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-group">Usuários</div>
+    <div class="stat-value">{{ stats.usuarios_ativos }}</div>
+    <div class="stat-label">ativos</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-group">Usuários</div>
+    <div class="stat-value" {% if stats.usuarios_pendentes > 0 %}style="color:var(--warning,#d97706)"{% endif %}>{{ stats.usuarios_pendentes }}</div>
+    <div class="stat-label">pendentes de aprovação</div>
+  </div>
+</div>
+
 {% if is_subadm %}
 <div class="card" style="margin-bottom:16px">
   <div style="font-size:14px;font-weight:500;margin-bottom:12px">Área do subadministrador</div>
@@ -22,14 +55,12 @@
 {% if is_admin %}
 <div class="card">
   <div style="font-size:14px;font-weight:500;margin-bottom:12px">Área do administrador</div>
-  <p style="font-size:13px;color:var(--text2);margin-bottom:12px">
-    Você tem acesso a todas as funcionalidades do sistema.
-  </p>
   <div style="display:flex;gap:8px;flex-wrap:wrap">
-    <a class="btn" href="/admin/">Painel Admin Django</a>
     <a class="btn" href="{% url 'admin_usuarios' %}">Usuários</a>
     <a class="btn" href="{% url 'admin_usuarios_pendentes' %}">Pendentes de aprovação</a>
     <a class="btn" href="{% url 'admin_subadmins' %}">SubAdmins</a>
+    <a class="btn" href="{% url 'admin_equipamentos' %}">Equipamentos</a>
+    <a class="btn" href="{% url 'admin_emprestimos' %}">Empréstimos</a>
   </div>
 </div>
 {% endif %}

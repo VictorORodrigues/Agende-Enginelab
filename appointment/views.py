@@ -7,6 +7,7 @@ from decouple import config
 
 from account.models import Perfil
 from account.decorators import requer_subadm
+from catalog.models import Equipamento, Livro
 from .forms import AgendamentoForm
 from .models import Agendamento
 
@@ -24,10 +25,20 @@ def home(request):
     is_admin = perfil.eh_admin
     is_subadm = perfil.eh_subadm or is_admin
 
+    stats = {
+        'equipamentos_total': Equipamento.objects.count(),
+        'equipamentos_emprestados': Equipamento.objects.filter(status=Equipamento.STATUS_EMPRESTADO).count(),
+        'livros_total': Livro.objects.count(),
+        'livros_emprestados': Livro.objects.filter(status=Livro.STATUS_EMPRESTADO).count(),
+        'usuarios_ativos': Perfil.objects.filter(status=Perfil.STATUS_APROVADO).count(),
+        'usuarios_pendentes': Perfil.objects.filter(status=Perfil.STATUS_PENDENTE).count(),
+    }
+
     return render(request, 'appointment/dashboard.html', {
         'perfil': perfil,
         'is_subadm': is_subadm,
         'is_admin': is_admin,
+        'stats': stats,
     })
 
 
