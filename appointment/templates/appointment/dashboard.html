@@ -5,23 +5,7 @@
     <div class="page-title">Olá, {{ request.user.first_name|default:request.user.username }}</div>
     <div class="page-subtitle">Bem-vindo ao sistema de gestão do EngineLab UFC</div>
   </div>
-  {% if is_student %}
-  <a class="btn btn-primary" href="{% url 'appointment:solicitar_agendamento' %}">+ Novo agendamento</a>
-  {% endif %}
 </div>
-
-{% if is_student %}
-<div class="card" style="margin-bottom:16px">
-  <div style="font-size:14px;font-weight:500;margin-bottom:12px">Área do aluno</div>
-  <p style="font-size:13px;color:var(--text2);margin-bottom:12px">
-    Solicite agendamentos de laboratório e acompanhe suas solicitações.
-  </p>
-  <div style="display:flex;gap:8px;flex-wrap:wrap">
-    <a class="btn btn-primary" href="{% url 'appointment:solicitar_agendamento' %}">Solicitar agendamento</a>
-    <a class="btn" href="{% url 'appointment:meus_agendamentos' %}">Meus agendamentos</a>
-  </div>
-</div>
-{% endif %}
 
 {% if is_subadm %}
 <div class="card" style="margin-bottom:16px">
