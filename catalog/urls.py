@@ -4,9 +4,14 @@ from . import views
 
 urlpatterns = [
     path('equipamentos/', views.equipamentos, name='equipamentos'),
+    path('equipamentos/gerenciar/', views.admin_equipamentos, name='admin_equipamentos'),
     path('equipamentos/criar/', views.equipamento_criar, name='equipamento_criar'),
     path('equipamentos/<int:pk>/editar/', views.equipamento_editar, name='equipamento_editar'),
     path('equipamentos/<int:pk>/excluir/', views.equipamento_excluir, name='equipamento_excluir'),
+
+    path('categorias/criar/', views.categoria_criar, name='categoria_criar'),
+    path('categorias/<int:pk>/editar/', views.categoria_editar, name='categoria_editar'),
+    path('categorias/<int:pk>/excluir/', views.categoria_excluir, name='categoria_excluir'),
 
     path('livros/', views.livros, name='livros'),
     path('livros/criar/', views.livro_criar, name='livro_criar'),

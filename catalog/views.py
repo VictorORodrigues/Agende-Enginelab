@@ -2,13 +2,15 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
+from django.db.models import ProtectedError
+from django.db.models import Count
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
 
 from account.decorators import requer_admin, requer_permissao_subadmin, requer_subadm
 
-from .forms import EquipamentoForm, LivroForm
+from .forms import CategoriaForm, EquipamentoForm, LivroForm
 from .models import Categoria, Emprestimo, Equipamento, FilaEspera, Livro
 
 
@@ -40,13 +42,32 @@ def equipamentos(request):
 
 
 @requer_permissao_subadmin('equipamento')
+def admin_equipamentos(request):
+    qs = Equipamento.objects.select_related('categoria').all()
+    categoria_id = request.GET.get('categoria')
+    status = request.GET.get('status')
+    if categoria_id:
+        qs = qs.filter(categoria_id=categoria_id)
+    if status:
+        qs = qs.filter(status=status)
+    categorias = Categoria.objects.annotate(total=Count('equipamentos')).order_by('nome')
+    return render(request, 'catalog/admin_equipamentos.html', {
+        'equipamentos': qs,
+        'categorias': categorias,
+        'status_choices': Equipamento.STATUS_CHOICES,
+        'categoria_selecionada': categoria_id,
+        'status_selecionado': status,
+    })
+
+
+@requer_permissao_subadmin('equipamento')
 def equipamento_criar(request):
     if request.method == 'POST':
         form = EquipamentoForm(request.POST)
         if form.is_valid():
             form.save()
             messages.success(request, 'Equipamento cadastrado.')
-            return redirect(reverse('equipamentos'))
+            return redirect(reverse('admin_equipamentos'))
     else:
         form = EquipamentoForm()
     return render(request, 'catalog/equipamento_form.html', {'form': form, 'modo': 'criar'})
@@ -60,7 +81,7 @@ def equipamento_editar(request, pk):
         if form.is_valid():
             form.save()
             messages.success(request, 'Equipamento atualizado.')
-            return redirect(reverse('equipamentos'))
+            return redirect(reverse('admin_equipamentos'))
     else:
         form = EquipamentoForm(instance=equipamento)
     return render(request, 'catalog/equipamento_form.html', {
@@ -74,8 +95,59 @@ def equipamento_excluir(request, pk):
     if request.method == 'POST':
         equipamento.delete()
         messages.success(request, 'Equipamento excluído.')
-        return redirect(reverse('equipamentos'))
-    return render(request, 'catalog/confirmar_exclusao.html', {'objeto': equipamento, 'tipo': 'equipamento'})
+        return redirect(reverse('admin_equipamentos'))
+    return render(request, 'catalog/confirmar_exclusao.html', {
+        'objeto': equipamento,
+        'tipo': 'equipamento',
+        'voltar_url': reverse('admin_equipamentos'),
+    })
+
+
+# ===============================
+# CATEGORIAS
+# ===============================
+@requer_permissao_subadmin('equipamento')
+def categoria_criar(request):
+    if request.method == 'POST':
+        form = CategoriaForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Categoria cadastrada.')
+            return redirect(reverse('admin_equipamentos'))
+    else:
+        form = CategoriaForm()
+    return render(request, 'catalog/categoria_form.html', {'form': form, 'modo': 'criar'})
+
+
+@requer_permissao_subadmin('equipamento')
+def categoria_editar(request, pk):
+    categoria = get_object_or_404(Categoria, pk=pk)
+    if request.method == 'POST':
+        form = CategoriaForm(request.POST, instance=categoria)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Categoria atualizada.')
+            return redirect(reverse('admin_equipamentos'))
+    else:
+        form = CategoriaForm(instance=categoria)
+    return render(request, 'catalog/categoria_form.html', {'form': form, 'modo': 'editar', 'categoria': categoria})
+
+
+@requer_admin
+def categoria_excluir(request, pk):
+    categoria = get_object_or_404(Categoria, pk=pk)
+    if request.method == 'POST':
+        try:
+            categoria.delete()
+            messages.success(request, 'Categoria excluída.')
+        except ProtectedError:
+            messages.error(request, 'Não é possível excluir: esta categoria possui itens vinculados.')
+        return redirect(reverse('admin_equipamentos'))
+    return render(request, 'catalog/confirmar_exclusao.html', {
+        'objeto': categoria,
+        'tipo': 'categoria',
+        'voltar_url': reverse('admin_equipamentos'),
+    })
 
 
 # ===============================

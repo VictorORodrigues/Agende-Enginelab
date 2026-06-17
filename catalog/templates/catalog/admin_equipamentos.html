@@ -1,0 +1,105 @@
+{% extends "account/base_dash.html" %}
+{% block content %}
+<div class="page-header">
+  <div><div class="page-title">Gerenciar Equipamentos</div></div>
+  <a class="btn btn-primary" href="{% url 'equipamento_criar' %}">Cadastrar equipamento</a>
+</div>
+
+<form method="get" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+  <select name="categoria" class="form-input" style="width:200px" onchange="this.form.submit()">
+    <option value="">Todas as categorias</option>
+    {% for categoria in categorias %}
+    <option value="{{ categoria.pk }}" {% if categoria_selecionada == categoria.pk|stringformat:"s" %}selected{% endif %}>{{ categoria.nome }}</option>
+    {% endfor %}
+  </select>
+  <select name="status" class="form-input" style="width:160px" onchange="this.form.submit()">
+    <option value="">Todos os status</option>
+    {% for valor, rotulo in status_choices %}
+    <option value="{{ valor }}" {% if status_selecionado == valor %}selected{% endif %}>{{ rotulo }}</option>
+    {% endfor %}
+  </select>
+</form>
+
+<div class="card" style="padding:0;overflow:hidden">
+  {% if equipamentos %}
+  <table>
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>Identificador</th>
+        <th>Categoria</th>
+        <th>Status</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for equipamento in equipamentos %}
+      <tr>
+        <td>{{ equipamento.nome }}</td>
+        <td>{{ equipamento.identificador }}</td>
+        <td>{{ equipamento.categoria.nome }}</td>
+        <td>
+          {% if equipamento.status == 'disponivel' %}
+          <span class="badge badge-green">Disponível</span>
+          {% else %}
+          <span class="badge badge-amber">Emprestado</span>
+          {% endif %}
+        </td>
+        <td>
+          <a class="btn btn-sm" href="{% url 'equipamento_editar' equipamento.pk %}">Editar</a>
+          {% if request.user.perfil.eh_admin %}
+          <a class="btn btn-sm btn-danger" href="{% url 'equipamento_excluir' equipamento.pk %}">Excluir</a>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">
+    <div class="empty-icon">🧰</div>
+    <div class="empty-title">Nenhum equipamento encontrado.</div>
+  </div>
+  {% endif %}
+</div>
+
+<div class="page-header" style="margin-top:32px">
+  <div><div class="page-title" style="font-size:16px">Categorias</div></div>
+  <a class="btn btn-primary" href="{% url 'categoria_criar' %}">Nova categoria</a>
+</div>
+
+<div class="card" style="padding:0;overflow:hidden">
+  {% if categorias %}
+  <table>
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>Descrição</th>
+        <th>Equipamentos</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for categoria in categorias %}
+      <tr>
+        <td>{{ categoria.nome }}</td>
+        <td>{{ categoria.descricao|default:"-" }}</td>
+        <td>{{ categoria.total }}</td>
+        <td>
+          <a class="btn btn-sm" href="{% url 'categoria_editar' categoria.pk %}">Editar</a>
+          {% if request.user.perfil.eh_admin %}
+          <a class="btn btn-sm btn-danger" href="{% url 'categoria_excluir' categoria.pk %}">Excluir</a>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">
+    <div class="empty-icon">🗂️</div>
+    <div class="empty-title">Nenhuma categoria cadastrada.</div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

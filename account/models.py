@@ -64,6 +64,10 @@ class Perfil(models.Model):
             return self.permissoes.filter(escopo=escopo).exists()  # via PermissaoSubAdmin.subadmin
         return False
 
+    @property
+    def pode_gerenciar_equipamentos(self):
+        return self.tem_permissao('equipamento')
+
 
 class PermissaoSubAdmin(models.Model):
     ESCOPO_EQUIPAMENTO = 'equipamento'

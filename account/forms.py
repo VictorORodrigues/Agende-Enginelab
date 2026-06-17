@@ -139,7 +139,7 @@ class SubAdminForm(forms.Form):
                 )
                 perfil = user.perfil
                 perfil.tipo = 'SUBADM'
-                perfil.status = PerfilModel.STATUS_ATIVO
+                perfil.status = PerfilModel.STATUS_APROVADO
                 perfil.matricula = matricula
                 perfil.save()
 

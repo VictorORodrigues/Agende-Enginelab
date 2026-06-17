@@ -1,0 +1,30 @@
+Performing system checks...
+
+June 17, 2026 - 08:08:26
+Django version 5.1.4, using settings 'agende_enginelab.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+Performing system checks...
+
+June 17, 2026 - 08:27:48
+Django version 5.1.4, using settings 'agende_enginelab.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+Performing system checks...
+
+
+You have 1 unapplied migration(s). Your project may not work properly until you apply the migrations for app(s): catalog.
+Run 'python manage.py migrate' to apply them.
+June 17, 2026 - 08:34:34
+Django version 5.1.4, using settings 'agende_enginelab.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+Performing system checks...
+
+Performing system checks...
+
+Performing system checks...
+

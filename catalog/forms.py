@@ -3,6 +3,12 @@ from django import forms
 from .models import Categoria, Equipamento, Livro
 
 
+class CategoriaForm(forms.ModelForm):
+    class Meta:
+        model = Categoria
+        fields = ['nome', 'descricao']
+
+
 class EquipamentoForm(forms.ModelForm):
     class Meta:
         model = Equipamento
