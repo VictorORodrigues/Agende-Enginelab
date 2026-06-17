@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.urls import path, include, reverse_lazy
 from django.contrib.auth import views as auth_views
-from account.views import register
+from account.views import register, aguardando_aprovacao, aprovar_via_token, recusar_via_token
 from account.forms import LoginForm
 
 urlpatterns = [
@@ -9,10 +9,13 @@ urlpatterns = [
 
     path('', auth_views.LoginView.as_view(
         template_name='registration/login.html',
-        authentication_form=LoginForm 
+        authentication_form=LoginForm
     ), name='login'),
 
-    path('register/', register, name='register'),
+    path('registro/', register, name='register'),
+    path('aguardando/', aguardando_aprovacao, name='aguardando_aprovacao'),
+    path('auth/aprovar/<str:token>/', aprovar_via_token, name='aprovar_via_token'),
+    path('auth/recusar/<str:token>/', recusar_via_token, name='recusar_via_token'),
     path('accounts/logout/', auth_views.LogoutView.as_view(), name='logout'),
     path(
         'accounts/password_reset/',

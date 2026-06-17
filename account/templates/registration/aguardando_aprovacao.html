@@ -1,0 +1,17 @@
+{% extends "account/base.html" %}
+{% block title %}Aguardando aprovação — EngineLab UFC{% endblock %}
+{% block content %}
+<div class="auth-wrap" style="padding-top:60px;padding-bottom:60px">
+  <div class="auth-card" style="max-width:460px;text-align:center">
+    <div class="auth-logo">L</div>
+    <div class="auth-title">Cadastro enviado!</div>
+    <div class="auth-sub" style="margin-bottom:20px">
+      Sua solicitação foi recebida e está aguardando aprovação do administrador.
+      Você receberá um e-mail assim que o acesso for liberado.
+    </div>
+    <div class="auth-footer">
+      <a class="auth-link" href="{% url 'login' %}">Voltar para o login</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

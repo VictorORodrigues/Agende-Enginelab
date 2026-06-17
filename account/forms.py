@@ -62,7 +62,7 @@ class RegisterForm(forms.ModelForm):
             try:
                 user.save()
                 perfil = user.perfil
-                perfil.status = Perfil.STATUS_PENDENTE_EMAIL
+                perfil.status = Perfil.STATUS_PENDENTE
                 perfil.matricula = self.cleaned_data.get('matricula')
                 perfil.telefone = self.cleaned_data.get('telefone')
                 perfil.save()
@@ -70,6 +70,90 @@ class RegisterForm(forms.ModelForm):
                 raise forms.ValidationError("Esta matrícula já está registada.")
         return user
     
+
+class SubAdminForm(forms.Form):
+    nome = forms.CharField(label='Nome completo', max_length=150)
+    email = forms.EmailField(label='E-mail')
+    matricula = forms.CharField(label='Matrícula', max_length=20)
+    senha = forms.CharField(label='Senha', widget=forms.PasswordInput, required=False)
+    escopo_agendamento = forms.BooleanField(label='Agendamentos', required=False)
+    escopo_equipamento = forms.BooleanField(label='Equipamentos', required=False)
+    escopo_livro = forms.BooleanField(label='Livros', required=False)
+    escopo_emprestimo = forms.BooleanField(label='Empréstimos', required=False)
+
+    def __init__(self, *args, instance=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._instance = instance
+        if instance:
+            self.fields['nome'].initial = instance.user.get_full_name()
+            self.fields['email'].initial = instance.user.email
+            self.fields['matricula'].initial = instance.matricula
+            escopos_ativos = set(instance.permissoes.values_list('escopo', flat=True))
+            from .models import PermissaoSubAdmin as PAD
+            self.fields['escopo_equipamento'].initial = PAD.ESCOPO_EQUIPAMENTO in escopos_ativos
+            self.fields['escopo_livro'].initial = PAD.ESCOPO_LIVRO in escopos_ativos
+            self.fields['escopo_agendamento'].initial = PAD.ESCOPO_AGENDAMENTO in escopos_ativos
+            self.fields['escopo_emprestimo'].initial = PAD.ESCOPO_EMPRESTIMO in escopos_ativos
+
+    def clean_senha(self):
+        senha = self.cleaned_data.get('senha')
+        if senha:
+            validate_password(senha)
+        elif not self._instance:
+            raise forms.ValidationError('Senha obrigatória para novos SubAdmins.')
+        return senha
+
+    def save(self):
+        from django.db import transaction
+        from django.contrib.auth.models import User as AuthUser
+        from .models import Perfil as PerfilModel, PermissaoSubAdmin as PAD
+        nome = self.cleaned_data['nome']
+        email = self.cleaned_data['email']
+        matricula = self.cleaned_data['matricula']
+        senha = self.cleaned_data.get('senha')
+        partes = nome.strip().split(' ', 1)
+        first_name = partes[0]
+        last_name = partes[1] if len(partes) > 1 else ''
+
+        with transaction.atomic():
+            if self._instance:
+                user = self._instance.user
+                user.first_name = first_name
+                user.last_name = last_name
+                user.email = email
+                if senha:
+                    user.set_password(senha)
+                user.save()
+                perfil = self._instance
+                perfil.matricula = matricula
+                perfil.save()
+                perfil.permissoes.all().delete()
+            else:
+                user = AuthUser.objects.create_user(
+                    username=matricula,
+                    email=email,
+                    password=senha,
+                    first_name=first_name,
+                    last_name=last_name,
+                    is_active=True,
+                )
+                perfil = user.perfil
+                perfil.tipo = 'SUBADM'
+                perfil.status = PerfilModel.STATUS_ATIVO
+                perfil.matricula = matricula
+                perfil.save()
+
+            mapa = {
+                'escopo_equipamento': PAD.ESCOPO_EQUIPAMENTO,
+                'escopo_livro': PAD.ESCOPO_LIVRO,
+                'escopo_agendamento': PAD.ESCOPO_AGENDAMENTO,
+                'escopo_emprestimo': PAD.ESCOPO_EMPRESTIMO,
+            }
+            for campo, escopo in mapa.items():
+                if self.cleaned_data.get(campo):
+                    PAD.objects.get_or_create(subadmin=perfil, escopo=escopo)
+        return perfil
+
 
 class LoginForm(AuthenticationForm):
     def __init__(self, request=None, *args, **kwargs):
@@ -112,15 +196,16 @@ class LoginForm(AuthenticationForm):
             try:
                 user = User.objects.filter(username=username).first()
                 if user and user.check_password(password) and not user.is_active:
-                    status = getattr(user.perfil, 'status', Perfil.STATUS_PENDENTE_EMAIL)
-                    if status == Perfil.STATUS_PENDENTE_EMAIL:
+                    status = getattr(user.perfil, 'status', Perfil.STATUS_PENDENTE)
+                    if status == Perfil.STATUS_PENDENTE:
                         raise forms.ValidationError(
-                            "Confirme seu e-mail antes de entrar no sistema."
-                        )
-                    if status == Perfil.STATUS_PENDENTE_APROVACAO:
-                        raise forms.ValidationError(
-                            "Sua conta ainda não foi aprovada pelo administrador. "
+                            "Seu cadastro ainda não foi aprovado pelo administrador. "
                             "Você receberá um e-mail quando o acesso for liberado."
+                        )
+                    if status == Perfil.STATUS_REJEITADO:
+                        raise forms.ValidationError(
+                            "Seu cadastro não foi aprovado. "
+                            "Entre em contato com a administração do laboratório."
                         )
             except OperationalError:
                 raise forms.ValidationError("Banco de dados não inicializado. Execute as migrações (manage.py migrate).")

@@ -1,37 +1,42 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-br">
 <head>
-    <style>
-        .button {
-            background-color: #28a745;
-            border: none;
-            color: white;
-            padding: 10px 20px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 16px;
-            margin: 4px 2px;
-            cursor: pointer;
-            border-radius: 5px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <style>
+    body { margin: 0; padding: 0; background: #f4f7f6; font-family: Arial, sans-serif; }
+    .wrap { max-width: 600px; margin: 20px auto; background: #fff; border-radius: 8px; overflow: hidden; }
+    .header { padding: 24px; background: #1a4fd6; color: #fff; text-align: center; }
+    .header h1 { margin: 0; font-size: 22px; }
+    .body { padding: 32px; }
+    .body h2 { margin-top: 0; color: #1a4fd6; }
+    .info { background: #f8f9fa; border-radius: 6px; padding: 16px; margin: 16px 0; }
+    .info li { margin-bottom: 6px; }
+    .actions { text-align: center; margin: 28px 0 8px; }
+    .btn { display: inline-block; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-size: 15px; font-weight: bold; margin: 0 8px; }
+    .btn-approve { background: #28a745; color: #fff; }
+    .btn-reject { background: #dc3545; color: #fff; }
+  </style>
 </head>
 <body>
-    <h2>Nova Solicitação de Cadastro</h2>
-    <p>Um novo usuário confirmou o e-mail e aguarda aprovação no sistema <strong>EngineLab</strong>:</p>
-    
-    <ul>
+  <div class="wrap">
+    <div class="header"><h1>EngineLab UFC</h1></div>
+    <div class="body">
+      <h2>Nova solicitação de cadastro</h2>
+      <p>Um novo usuário se cadastrou e aguarda aprovação:</p>
+      <ul class="info">
         <li><strong>Nome:</strong> {{ user.get_full_name }}</li>
-        <li><strong>Email:</strong> {{ user.email }}</li>
-        <li><strong>Telefone:</strong> {{ user.perfil.telefone|default:"Não informado" }}</li>
+        <li><strong>E-mail:</strong> {{ user.email }}</li>
         <li><strong>Matrícula:</strong> {{ user.perfil.matricula|default:"Não informada" }}</li>
-    </ul>
-
-    <p>Para aprovar este usuário, clique no botão abaixo para ir ao painel administrativo:</p>
-    
-    <a href="{{ admin_url }}" class="button" style="color: #ffffff;">Aprovar Cadastro</a>
-
-    <p>Ou copie e cole o link: {{ admin_url }}</p>
+        <li><strong>Telefone:</strong> {{ user.perfil.telefone|default:"Não informado" }}</li>
+      </ul>
+      <div class="actions">
+        <a href="{{ aprovar_url }}" class="btn btn-approve">Aprovar</a>
+        <a href="{{ recusar_url }}" class="btn btn-reject">Recusar</a>
+      </div>
+      <p style="font-size:12px;color:#888;text-align:center">
+        Cada link só pode ser usado uma vez. Após clicar, a ação não poderá ser desfeita por aqui.
+      </p>
+    </div>
+  </div>
 </body>
 </html>

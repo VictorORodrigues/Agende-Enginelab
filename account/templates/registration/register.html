@@ -1,49 +1,43 @@
 {% extends "account/base.html" %}
 {% load widget_tweaks %}
-
+{% block title %}Cadastro — EngineLab UFC{% endblock %}
 {% block content %}
-<div class="container mt-5">
-  <div class="row justify-content-center">
-    <div class="col-md-6">
-      <div class="card shadow">
-        <div class="card-header bg-primary text-white">
-          <h4 class="mb-0">Cadastro EngineLab</h4>
-        </div>
-        <div class="card-body">
-          <form method="post" novalidate>
-            {% csrf_token %}
+<div class="auth-wrap" style="padding-top:40px;padding-bottom:40px">
+  <div class="auth-card" style="max-width:460px">
+    <div class="auth-logo">L</div>
+    <div class="auth-title">Criar nova conta</div>
+    <div class="auth-sub">Preencha os dados para se cadastrar</div>
 
-            {% if form.non_field_errors %}
-              <div class="alert alert-danger">
-                {% for error in form.non_field_errors %}
-                  <div>{{ error }}</div>
-                {% endfor %}
-              </div>
-            {% endif %}
-            
-            {% for field in form %}
-              <div class="mb-3">
-                <label class="form-label fw-bold">{{ field.label }}</label>
-                {{ field|add_class:"form-control" }}
-                {% for error in field.errors %}
-                  <div class="text-danger small">{{ error }}</div>
-                {% endfor %}
-              </div>
-            {% endfor %}
+    {% if form.non_field_errors %}
+    <div class="alert alert-error" style="margin-bottom:16px">
+      {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+    </div>
+    {% endif %}
 
-            <button type="submit" class="btn btn-primary w-100">Cadastrar</button>
-          </form>
-        </div>
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% for field in form %}
+      <div class="form-group">
+        <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field|add_class:"form-input" }}
+        {% for error in field.errors %}
+        <div class="alert alert-error" style="margin-top:4px;padding:4px 8px">{{ error }}</div>
+        {% endfor %}
       </div>
+      {% endfor %}
+      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:4px">
+        Cadastrar
+      </button>
+    </form>
+
+    <div class="auth-footer">
+      Já tem conta? <a class="auth-link" href="{% url 'login' %}">Entrar</a>
     </div>
   </div>
 </div>
-
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-  // Agora o ID do campo é id_matricula
   const matriculaInput = document.getElementById("id_matricula");
-
   if (matriculaInput) {
     matriculaInput.addEventListener("keypress", function (e) {
       if (!/[0-9]/.test(e.key)) e.preventDefault();

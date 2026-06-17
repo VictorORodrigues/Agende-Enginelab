@@ -1,62 +1,67 @@
-{% extends "account/base.html" %} {% block content %}
-<div class="row justify-content-center mt-5">
-  <div class="col-md-4">
-    <div class="card shadow">
-      <div class="card-header bg-primary text-white text-center">
-        <h4>Login EngineLab UFC</h4>
+{% extends "account/base.html" %}
+{% block title %}Entrar — EngineLab UFC{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-logo">L</div>
+    <div class="auth-title">Entrar na sua conta</div>
+    <div class="auth-sub">Sistema de Gestão — EngineLab UFC</div>
+
+    {% if form.non_field_errors %}
+    <div class="alert alert-error" style="margin-bottom:16px">
+      {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.username.id_for_label }}">Matrícula</label>
+        <input class="form-input" type="text"
+               id="{{ form.username.id_for_label }}"
+               name="{{ form.username.html_name }}"
+               value="{{ form.username.value|default:'' }}"
+               autocomplete="username">
+        {% for error in form.username.errors %}
+        <div class="alert alert-error" style="margin-top:4px;padding:4px 8px">{{ error }}</div>
+        {% endfor %}
       </div>
 
-      <div class="card-body">
-        {% if form.errors or form.non_field_errors %}
-        <div class="alert alert-danger p-2" role="alert">
-          <small>
-            {% if form.non_field_errors %} {{ form.non_field_errors|striptags }}
-            {% else %} Matrícula ou senha incorretos. {% endif %}
-          </small>
-        </div>
-        {% endif %}
-
-        <form method="post" novalidate>
-          {% csrf_token %}
-
-          <div class="mb-3">
-            <label
-              for="{{ form.username.id_for_label }}"
-              class="form-label">Matrícula</label>
-            {{ form.username }} {% for error in form.username.errors %}
-            <div class="invalid-feedback d-block">{{ error }}</div>
-            {% endfor %}
-          </div>
-
-          <div class="mb-3">
-            {{ form.password.label_tag }} {{ form.password }} {% for error in form.password.errors %}
-            <div class="invalid-feedback d-block">{{ error }}</div>
-            {% endfor %}
-          </div>
-
-          {% if form.captcha_answer %}
-          <div class="mb-3">
-            {{ form.captcha_answer.label_tag }} {{ form.captcha_answer }} {% for error in form.captcha_answer.errors %}
-            <div class="invalid-feedback d-block">{{ error }}</div>
-            {% endfor %}
-          </div>
-          {% endif %}
-
-          <div class="text-end mb-3">
-            <small>
-              <a href="{% url 'password_reset' %}"> Esqueci a senha </a>
-            </small>
-          </div>
-
-          <button type="submit" class="btn btn-primary w-100">Entrar</button>
-        </form>
+      <div class="form-group">
+        <label class="form-label" for="{{ form.password.id_for_label }}">Senha</label>
+        <input class="form-input" type="password"
+               id="{{ form.password.id_for_label }}"
+               name="{{ form.password.html_name }}"
+               autocomplete="current-password">
+        {% for error in form.password.errors %}
+        <div class="alert alert-error" style="margin-top:4px;padding:4px 8px">{{ error }}</div>
+        {% endfor %}
       </div>
 
-      <div class="card-footer text-center">
-        <small>
-          Novo por aqui? <a href="{% url 'register' %}">Cadastre-se</a>
-        </small>
+      {% if form.captcha_answer %}
+      <div class="form-group">
+        <label class="form-label">{{ form.captcha_answer.label }}</label>
+        <input class="form-input" type="number"
+               name="{{ form.captcha_answer.html_name }}"
+               id="{{ form.captcha_answer.id_for_label }}">
+        {% for error in form.captcha_answer.errors %}
+        <div class="alert alert-error" style="margin-top:4px;padding:4px 8px">{{ error }}</div>
+        {% endfor %}
       </div>
+      {% endif %}
+
+      <div style="text-align:right;margin-bottom:14px">
+        <a class="auth-link" href="{% url 'password_reset' %}">Esqueci a senha</a>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">
+        Entrar
+      </button>
+    </form>
+
+    <div class="auth-footer">
+      Novo por aqui? <a class="auth-link" href="{% url 'register' %}">Cadastre-se</a>
     </div>
   </div>
 </div>

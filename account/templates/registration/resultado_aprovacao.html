@@ -1,0 +1,25 @@
+{% extends "account/base.html" %}
+{% block title %}Resultado da aprovação — EngineLab UFC{% endblock %}
+{% block content %}
+<div class="auth-wrap" style="padding-top:60px;padding-bottom:60px">
+  <div class="auth-card" style="max-width:460px;text-align:center">
+    <div class="auth-logo">L</div>
+    {% if acao == 'aprovado' %}
+      <div class="auth-title">Cadastro aprovado</div>
+      <div class="auth-sub" style="margin-bottom:20px">
+        O usuário <strong>{{ perfil.user.get_full_name }}</strong> foi aprovado e já pode acessar o sistema.
+        Um e-mail de confirmação foi enviado para {{ perfil.user.email }}.
+      </div>
+    {% else %}
+      <div class="auth-title">Cadastro recusado</div>
+      <div class="auth-sub" style="margin-bottom:20px">
+        O cadastro de <strong>{{ perfil.user.get_full_name }}</strong> foi recusado.
+        O usuário foi notificado por e-mail.
+      </div>
+    {% endif %}
+    <div class="auth-footer">
+      <a class="auth-link" href="{% url 'admin_usuarios_pendentes' %}">Ver pendentes</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
