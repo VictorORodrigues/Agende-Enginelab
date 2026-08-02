@@ -1,50 +1,70 @@
 {% extends "account/base_dash.html" %}
 {% load widget_tweaks %}
+{% load account_extras %}
 {% block content %}
 <div class="page-header">
   <div><div class="page-title">{% if modo == 'criar' %}Criar SubAdmin{% else %}Editar SubAdmin: {{ subadmin.user.get_full_name|default:subadmin.user.username }}{% endif %}</div></div>
   <a class="btn" href="{% url 'admin_subadmins' %}">Voltar</a>
 </div>
 
-<div class="card" style="max-width:480px">
+<div class="card" style="max-width: 600px">
   {% if form.non_field_errors %}
   <div class="alert alert-error">
     {% for error in form.non_field_errors %}{{ error }}{% endfor %}
   </div>
   {% endif %}
+
   <form method="post" novalidate>
     {% csrf_token %}
-    {% for field in form %}
 
-    {% if modo == 'editar' and field.html_name == 'senha' %}
-    <div class="divider"></div>
-    <div class="form-label" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--text3);margin-bottom:10px">Alterar senha <span style="font-weight:400;text-transform:none;letter-spacing:0">(deixe em branco para manter)</span></div>
-    {% endif %}
-
-    {% if field.html_name == 'escopo_equipamento' %}
-    <div class="divider"></div>
-    <div class="form-label" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--text3);margin-bottom:10px">Permissões</div>
-    {% endif %}
-
-    {% if field.field.widget.input_type == 'checkbox' %}
-    <div class="form-check">
-      {{ field }}
-      <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-    </div>
-    {% else %}
+    <!-- E-mail -->
     <div class="form-group">
-      <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-      {{ field|add_class:"form-input" }}
+      <label class="form-label" for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
+      {{ form.email|add_class:"form-input" }}
+      {% for error in form.email.errors %}<div class="alert alert-error">{{ error }}</div>{% endfor %}
     </div>
-    {% endif %}
-    {% for error in field.errors %}
-    <div class="alert alert-error">{{ error }}</div>
-    {% endfor %}
 
-    {% endfor %}
-    <div style="margin-top:16px">
-      <button type="submit" class="btn btn-primary">Salvar</button>
+    <div class="divider"></div>
+    <div class="form-label" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--text3);margin-bottom:12px">Jurisdição e Permissões por Setor</div>
+
+    <div style="overflow-x: auto">
+      <table class="table-permissions" style="width: 100%; border-collapse: collapse; margin-bottom: 24px">
+        <thead>
+          <tr style="border-bottom: 1px solid var(--border)">
+            <th style="text-align: left; padding: 12px 8px; font-size: 12px; color: var(--text2)">Setor</th>
+            <th style="text-align: center; padding: 12px 8px; font-size: 12px; color: var(--text2)">Gerenciar Itens</th>
+            <th style="text-align: center; padding: 12px 8px; font-size: 12px; color: var(--text2)">Gerenciar Empréstimos</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for setor in form.setores_list %}
+          <tr style="border-bottom: 1px solid var(--border2)">
+            <td style="padding: 12px 8px; font-weight: 500; font-size: 13px">{{ setor.nome }}</td>
+            <td style="padding: 12px 8px; text-align: center">
+              {{ form|get_pode_itens_field:setor.id }}
+            </td>
+            <td style="padding: 12px 8px; text-align: center">
+              {{ form|get_pode_emprestimos_field:setor.id }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div style="margin-top:24px">
+      <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 12px">
+        {% if modo == 'criar' %}Enviar convite{% else %}Salvar alterações{% endif %}
+      </button>
     </div>
   </form>
 </div>
+
+<style>
+  .table-permissions input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+  }
+</style>
 {% endblock %}

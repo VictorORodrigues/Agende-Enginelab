@@ -2,40 +2,57 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <style>
-    body { margin: 0; padding: 0; background: #f4f7f6; font-family: Arial, sans-serif; }
-    .wrap { max-width: 600px; margin: 20px auto; background: #fff; border-radius: 8px; overflow: hidden; }
-    .header { padding: 24px; background: #1a4fd6; color: #fff; text-align: center; }
-    .header h1 { margin: 0; font-size: 22px; }
-    .body { padding: 32px; }
-    .body h2 { margin-top: 0; color: #1a4fd6; }
-    .info { background: #f8f9fa; border-radius: 6px; padding: 16px; margin: 16px 0; }
-    .info li { margin-bottom: 6px; }
-    .actions { text-align: center; margin: 28px 0 8px; }
-    .btn { display: inline-block; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-size: 15px; font-weight: bold; margin: 0 8px; }
-    .btn-approve { background: #28a745; color: #fff; }
-    .btn-reject { background: #dc3545; color: #fff; }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body>
-  <div class="wrap">
-    <div class="header"><h1>EngineLab UFC</h1></div>
-    <div class="body">
-      <h2>Nova solicitação de cadastro</h2>
-      <p>Um novo usuário se cadastrou e aguarda aprovação:</p>
-      <ul class="info">
-        <li><strong>Nome:</strong> {{ user.get_full_name }}</li>
-        <li><strong>E-mail:</strong> {{ user.email }}</li>
-        <li><strong>Matrícula:</strong> {{ user.perfil.matricula|default:"Não informada" }}</li>
-        <li><strong>Telefone:</strong> {{ user.perfil.telefone|default:"Não informado" }}</li>
-      </ul>
-      <div class="actions">
-        <a href="{{ aprovar_url }}" class="btn btn-approve">Aprovar</a>
-        <a href="{{ recusar_url }}" class="btn btn-reject">Recusar</a>
+<body style="margin:0;padding:0;background-color:#f4f5f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <div style="max-width:600px;margin:40px auto;background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.08);border:1px solid #e5e7eb;">
+    <!-- Header -->
+    <div style="padding:32px 24px;background-color:#1a4fd6;text-align:center;">
+      <div style="display:inline-block;width:40px;height:40px;background-color:#ffffff;color:#1a4fd6;border-radius:10px;line-height:40px;font-size:20px;font-weight:700;margin-bottom:12px;">L</div>
+      <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:600;letter-spacing:-0.02em;">EngineLab UFC</h1>
+    </div>
+
+    <!-- Content -->
+    <div style="padding:40px 32px;">
+      <h2 style="margin:0 0 12px 0;color:#1f2328;font-size:20px;font-weight:600;text-align:center;">Nova solicitação de cadastro</h2>
+      <p style="margin:0 0 32px 0;color:#6b7280;font-size:15px;line-height:1.5;text-align:center;">Um novo usuário aguarda sua aprovação para acessar o sistema.</p>
+
+      <!-- Info Box -->
+      <div style="background-color:#f9fafb;border:1px solid #f3f4f6;border-radius:12px;padding:24px;margin-bottom:32px;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr>
+            <td style="padding-bottom:12px;color:#6b7280;font-size:13px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;width:30%;">Nome</td>
+            <td style="padding-bottom:12px;color:#1f2328;font-size:15px;font-weight:500;">{{ user.get_full_name }}</td>
+          </tr>
+          <tr>
+            <td style="padding-bottom:12px;color:#6b7280;font-size:13px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;">E-mail</td>
+            <td style="padding-bottom:12px;color:#1a4fd6;font-size:15px;font-weight:500;">{{ user.email }}</td>
+          </tr>
+          <tr>
+            <td style="padding-bottom:12px;color:#6b7280;font-size:13px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;">Matrícula</td>
+            <td style="padding-bottom:12px;color:#1f2328;font-size:15px;font-weight:500;">{{ user.perfil.matricula|default:"Não informada" }}</td>
+          </tr>
+          <tr>
+            <td style="color:#6b7280;font-size:13px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;">Telefone</td>
+            <td style="color:#1f2328;font-size:15px;font-weight:500;">{{ user.perfil.telefone|default:"Não informado" }}</td>
+          </tr>
+        </table>
       </div>
-      <p style="font-size:12px;color:#888;text-align:center">
-        Cada link só pode ser usado uma vez. Após clicar, a ação não poderá ser desfeita por aqui.
+
+      <!-- Actions -->
+      <div style="text-align:center;margin-bottom:32px;">
+        <a href="{{ aprovar_url }}" style="display:inline-block;background-color:#15803d;color:#ffffff !important;padding:14px 32px;border-radius:8px;text-decoration:none;font-size:15px;font-weight:600;margin:0 8px;box-shadow:0 2px 4px rgba(21,128,61,0.2);">Aprovar Cadastro</a>
+        <a href="{{ recusar_url }}" style="display:inline-block;background-color:#b91c1c;color:#ffffff !important;padding:14px 32px;border-radius:8px;text-decoration:none;font-size:15px;font-weight:600;margin:0 8px;box-shadow:0 2px 4px rgba(185,28,28,0.2);">Recusar</a>
+      </div>
+
+      <p style="margin:0;color:#9aa1ac;font-size:12px;line-height:1.5;text-align:center;">
+        Este link expira após o uso. Se você não reconhece esta solicitação, por favor ignore este e-mail.
       </p>
+    </div>
+
+    <!-- Footer -->
+    <div style="padding:24px;background-color:#f9fafb;border-top:1px solid #e5e7eb;text-align:center;">
+      <p style="margin:0;color:#9aa1ac;font-size:12px;">&copy; 2024 EngineLab UFC. Todos os direitos reservados.</p>
     </div>
   </div>
 </body>

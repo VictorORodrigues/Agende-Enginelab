@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Movido para a fila de espera</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f7f6;font-family:Arial,sans-serif;">
+  <table align="center" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;background:#ffffff;margin-top:20px;border-radius:8px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.08);border:1px solid #e5e7eb;">
+    <tr>
+      <td style="padding:32px 24px;background:#1a4fd6;color:#ffffff;text-align:center;">
+        <h1 style="margin:0;font-size:24px;font-weight:600;">EngineLab UFC</h1>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:40px 32px;">
+        <h2 style="margin-top:0;color:#1f2328;font-size:20px;font-weight:600;text-align:center;">Item movido para a fila</h2>
+        <p style="color:#6b7280;font-size:15px;line-height:1.5;">
+          Olá, <strong>{{ usuario.first_name }}</strong>.
+        </p>
+        <p style="color:#6b7280;font-size:15px;line-height:1.5;">
+          Informamos que o item <strong>{{ item }}</strong> que você solicitou foi emprestado para outro usuário que estava à frente ou realizou o pedido simultaneamente.
+        </p>
+
+        <div style="background-color:#eff6ff;border:1px solid #dbeafe;border-radius:12px;padding:20px;margin:24px 0;">
+          <p style="margin:0;color:#1e40af;font-size:14px;font-weight:600;text-align:center;">
+            Não se preocupe: você foi colocado automaticamente na fila de espera deste item!
+          </p>
+        </div>
+
+        <p style="color:#6b7280;font-size:15px;line-height:1.5;">
+          Você será notificado por e-mail assim que o item for devolvido e estiver disponível para você.
+        </p>
+
+        <div style="text-align:center;margin-top:32px;">
+          <a href="{{ fila_url }}" style="display:inline-block;background-color:#1a4fd6;color:#ffffff !important;padding:14px 32px;border-radius:8px;text-decoration:none;font-size:15px;font-weight:600;">Ver minha posição na fila</a>
+        </div>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:24px;background-color:#f9fafb;border-top:1px solid #e5e7eb;text-align:center;">
+        <p style="margin:0;color:#9aa1ac;font-size:12px;">&copy; 2024 EngineLab UFC. Todos os direitos reservados.</p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

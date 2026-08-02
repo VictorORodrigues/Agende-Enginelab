@@ -19,7 +19,16 @@
       {% for field in form %}
       <div class="form-group">
         <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-        {{ field|add_class:"form-input" }}
+        {% if field.field.widget.input_type == 'password' %}
+          <div class="password-wrapper">
+            {{ field|add_class:"form-input" }}
+            <span class="password-toggle" onclick="togglePassword('{{ field.id_for_label }}', this)">
+              <i class="bi bi-eye"></i>
+            </span>
+          </div>
+        {% else %}
+          {{ field|add_class:"form-input" }}
+        {% endif %}
         {% for error in field.errors %}
         <div class="alert alert-error" style="margin-top:4px;padding:4px 8px">{{ error }}</div>
         {% endfor %}

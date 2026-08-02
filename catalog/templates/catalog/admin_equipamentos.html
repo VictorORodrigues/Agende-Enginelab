@@ -1,32 +1,45 @@
 {% extends "account/base_dash.html" %}
 {% block content %}
 <div class="page-header">
-  <div><div class="page-title">Gerenciar Equipamentos</div></div>
-  <a class="btn btn-primary" href="{% url 'equipamento_criar' %}">Cadastrar equipamento</a>
+  <div><div class="page-title">Gerenciar Itens</div></div>
+  <a class="btn btn-primary" href="{% url 'equipamento_criar' %}">Cadastrar item</a>
 </div>
 
-<form method="get" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
-  <select name="categoria" class="form-input" style="width:200px" onchange="this.form.submit()">
+<form method="get" id="searchForm" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+  <input type="text" name="q" id="searchInput" class="form-input" style="width:250px" placeholder="Pesquisar por nome, ID ou categoria..." value="{{ search_query|default:'' }}" autocomplete="off">
+
+  <select name="setor" class="form-input filter-select" style="width:200px">
+    <option value="">Todos os setores</option>
+    {% for setor in setores %}
+    <option value="{{ setor.pk }}" {% if setor_selecionado == setor.pk|stringformat:"s" %}selected{% endif %}>{{ setor.nome }}</option>
+    {% endfor %}
+  </select>
+
+  <select name="categoria" class="form-input filter-select" style="width:200px">
     <option value="">Todas as categorias</option>
-    {% for categoria in categorias %}
+    {% for categoria in categorias_filtro %}
     <option value="{{ categoria.pk }}" {% if categoria_selecionada == categoria.pk|stringformat:"s" %}selected{% endif %}>{{ categoria.nome }}</option>
     {% endfor %}
   </select>
-  <select name="status" class="form-input" style="width:160px" onchange="this.form.submit()">
+  <select name="status" class="form-input filter-select" style="width:160px">
     <option value="">Todos os status</option>
     {% for valor, rotulo in status_choices %}
     <option value="{{ valor }}" {% if status_selecionado == valor %}selected{% endif %}>{{ rotulo }}</option>
     {% endfor %}
   </select>
+  {% if search_query or categoria_selecionada or status_selecionado or setor_selecionado %}
+    <a href="{% url 'admin_equipamentos' %}" class="btn">Limpar</a>
+  {% endif %}
 </form>
 
-<div class="card" style="padding:0;overflow:hidden">
+<div class="card" id="resultsContainer" style="padding:0;overflow:hidden">
   {% if equipamentos %}
   <table>
     <thead>
       <tr>
         <th>Nome</th>
         <th>Identificador</th>
+        <th>Setor</th>
         <th>Categoria</th>
         <th>Status</th>
         <th>Ações</th>
@@ -37,6 +50,7 @@
       <tr>
         <td>{{ equipamento.nome }}</td>
         <td>{{ equipamento.identificador }}</td>
+        <td>{{ equipamento.setor.nome|default:"-" }}</td>
         <td>{{ equipamento.categoria.nome }}</td>
         <td>
           {% if equipamento.status == 'disponivel' %}
@@ -57,25 +71,41 @@
   </table>
   {% else %}
   <div class="empty">
-    <div class="empty-icon">🧰</div>
-    <div class="empty-title">Nenhum equipamento encontrado.</div>
+    <div class="empty-icon">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="12" x="3" y="9" rx="2"/><path d="M9 9V6a3 3 0 0 1 6 0v3"/><path d="M9 13v1"/><path d="M15 13v1"/></svg>
+    </div>
+    <div class="empty-title">Nenhum item encontrado.</div>
   </div>
   {% endif %}
 </div>
+
 
 <div class="page-header" style="margin-top:32px">
   <div><div class="page-title" style="font-size:16px">Categorias</div></div>
   <a class="btn btn-primary" href="{% url 'categoria_criar' %}">Nova categoria</a>
 </div>
 
-<div class="card" style="padding:0;overflow:hidden">
+<form method="get" id="catSearchForm" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+  <input type="text" name="cat_q" id="catSearchInput" class="form-input" style="width:250px" placeholder="Pesquisar por nome..." value="{{ cat_q|default:'' }}" autocomplete="off">
+  <select name="cat_setor" class="form-input filter-select" style="width:200px">
+    <option value="">Todos os setores</option>
+    {% for setor in setores %}
+    <option value="{{ setor.pk }}" {% if cat_setor_selecionado == setor.pk|stringformat:"s" %}selected{% endif %}>{{ setor.nome }}</option>
+    {% endfor %}
+  </select>
+  {% if cat_q or cat_setor_selecionado %}
+    <a href="{% url 'admin_equipamentos' %}" class="btn">Limpar</a>
+  {% endif %}
+</form>
+
+<div class="card" id="categoriesContainer" style="padding:0;overflow:hidden">
   {% if categorias %}
   <table>
     <thead>
       <tr>
         <th>Nome</th>
         <th>Descrição</th>
-        <th>Equipamentos</th>
+        <th>Itens</th>
         <th>Ações</th>
       </tr>
     </thead>
@@ -97,9 +127,85 @@
   </table>
   {% else %}
   <div class="empty">
-    <div class="empty-icon">🗂️</div>
+    <div class="empty-icon">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 2H8.6c-.4 0-.8.2-1.1.5-.3.3-.5.7-.5 1.1v12.8c0 .4.2.8.5 1.1.3.3.7.5 1.1.5h9.8c.4 0 .8-.2 1.1-.5.3-.3.5-.7.5-1.1V6.5L15.5 2z"/><path d="M3 7.6v12.8c0 .4.2.8.5 1.1.3.3.7.5 1.1.5h9.8"/><path d="M15 2v5h5"/></svg>
+    </div>
     <div class="empty-title">Nenhuma categoria cadastrada.</div>
   </div>
   {% endif %}
 </div>
+
+<script>
+  (function() {
+    function initSearch() {
+      const searchForm = document.getElementById('searchForm');
+      const catSearchForm = document.getElementById('catSearchForm');
+      const resultsContainer = document.getElementById('resultsContainer');
+      const categoriesContainer = document.getElementById('categoriesContainer');
+
+      let timeout = null;
+
+      function updateAll() {
+        if (resultsContainer) resultsContainer.style.opacity = '0.5';
+        if (categoriesContainer) categoriesContainer.style.opacity = '0.5';
+
+        const formData = new FormData(searchForm);
+        const catFormData = new FormData(catSearchForm);
+
+        const combinedParams = new URLSearchParams();
+        for (let [key, value] of formData.entries()) combinedParams.append(key, value);
+        for (let [key, value] of catFormData.entries()) combinedParams.append(key, value);
+
+        const url = `${window.location.pathname}?${combinedParams.toString()}`;
+        window.history.pushState({}, '', url);
+
+        fetch(url)
+          .then(response => response.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+
+            if (resultsContainer) {
+              const newResults = doc.getElementById('resultsContainer');
+              if (newResults) resultsContainer.innerHTML = newResults.innerHTML;
+              resultsContainer.style.opacity = '1';
+            }
+            if (categoriesContainer) {
+              const newCats = doc.getElementById('categoriesContainer');
+              if (newCats) categoriesContainer.innerHTML = newCats.innerHTML;
+              categoriesContainer.style.opacity = '1';
+            }
+          })
+          .catch(err => {
+            console.error('Erro na pesquisa:', err);
+            if (resultsContainer) resultsContainer.style.opacity = '1';
+            if (categoriesContainer) categoriesContainer.style.opacity = '1';
+          });
+      }
+
+      [document.getElementById('searchInput'), document.getElementById('catSearchInput')].forEach(input => {
+        if (input) {
+          input.addEventListener('input', () => {
+            clearTimeout(timeout);
+            timeout = setTimeout(updateAll, 300);
+          });
+        }
+      });
+
+      document.querySelectorAll('.filter-select').forEach(select => {
+        select.addEventListener('change', updateAll);
+      });
+
+      [searchForm, catSearchForm].forEach(f => {
+        if (f) f.addEventListener('submit', e => e.preventDefault());
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initSearch);
+    } else {
+      initSearch();
+    }
+  })();
+</script>
 {% endblock %}

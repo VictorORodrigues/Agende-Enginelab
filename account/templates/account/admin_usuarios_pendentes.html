@@ -13,7 +13,6 @@
         <th>Matrícula</th>
         <th>E-mail</th>
         <th>Telefone</th>
-        <th>Setor</th>
         <th>Cadastrado em</th>
         <th>Ações</th>
       </tr>
@@ -25,18 +24,19 @@
         <td>{{ perfil.matricula|default:"-" }}</td>
         <td>{{ perfil.user.email }}</td>
         <td>{{ perfil.telefone|default:"-" }}</td>
-        <td>{{ perfil.setor.nome|default:"-" }}</td>
         <td>{{ perfil.user.date_joined|date:"d/m/Y H:i" }}</td>
         <td>
-          <form method="post" action="{% url 'aprovar_usuario' perfil.pk %}">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-sm btn-success">Aprovar</button>
-          </form>
-          <form method="post" action="{% url 'recusar_usuario' perfil.pk %}"
-                onsubmit="return confirm('Recusar o cadastro de {{ perfil.user.get_full_name|default:perfil.user.username|escapejs }}?');">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-sm btn-danger">Recusar</button>
-          </form>
+          <div style="display:flex; gap:8px">
+            <form method="post" action="{% url 'aprovar_usuario' perfil.pk %}">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-success">Aprovar</button>
+            </form>
+
+            <button type="button" class="btn btn-sm btn-danger"
+                    onclick="abrirModalRecusar('{{ perfil.pk }}', '{{ perfil.user.get_full_name|default:perfil.user.username|escapejs }}')">
+              Recusar
+            </button>
+          </div>
         </td>
       </tr>
       {% endfor %}
@@ -44,9 +44,60 @@
   </table>
 {% else %}
   <div class="empty">
-    <div class="empty-icon">👤</div>
+    <div class="empty-icon">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    </div>
     <div class="empty-title">Nenhum cadastro pendente de aprovação no momento.</div>
   </div>
 {% endif %}
 </div>
+
+<!-- Modal de Confirmação de Recusa -->
+<div id="modalRecusar" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-title">Recusar Cadastro</div>
+    <div class="modal-sub">
+      Você tem certeza que deseja recusar o cadastro de <strong id="modalNomeUsuario"></strong>?
+    </div>
+    <p style="font-size: 13px; color: var(--text2); margin-top: -12px; margin-bottom: 20px;">
+      Esta ação enviará um e-mail de notificação ao usuário.
+    </p>
+
+    <div class="modal-actions">
+      <button type="button" class="btn" onclick="fecharModalRecusar()">Cancelar</button>
+      <form id="formRecusar" method="post" action="">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Sim, Recusar</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  function abrirModalRecusar(perfilId, nomeUsuario) {
+    const modal = document.getElementById('modalRecusar');
+    const nomeSpan = document.getElementById('modalNomeUsuario');
+    const form = document.getElementById('formRecusar');
+
+    nomeSpan.textContent = nomeUsuario;
+    // Constrói a URL dinamicamente. O Django gera a URL base e nós trocamos o ID.
+    // Usamos um truque de replace para garantir que a rota esteja correta.
+    let url = "{% url 'recusar_usuario' 0 %}".replace('0', perfilId);
+    form.action = url;
+
+    modal.classList.add('open');
+  }
+
+  function fecharModalRecusar() {
+    document.getElementById('modalRecusar').classList.remove('open');
+  }
+
+  // Fecha o modal ao clicar fora dele
+  window.onclick = function(event) {
+    const modal = document.getElementById('modalRecusar');
+    if (event.target == modal) {
+      fecharModalRecusar();
+    }
+  }
+</script>
 {% endblock %}

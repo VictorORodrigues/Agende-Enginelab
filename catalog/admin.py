@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Categoria, Emprestimo, Equipamento, FilaEspera, Livro
+from .models import Categoria, Emprestimo, Equipamento, Livro
 
 
 @admin.register(Categoria)
@@ -27,10 +27,4 @@ class LivroAdmin(admin.ModelAdmin):
 class EmprestimoAdmin(admin.ModelAdmin):
     list_display = ('usuario', 'equipamento', 'livro', 'status', 'data_inicio', 'data_final')
     list_filter = ('status',)
-    search_fields = ('usuario__username', 'usuario__first_name')
-
-
-@admin.register(FilaEspera)
-class FilaEsperaAdmin(admin.ModelAdmin):
-    list_display = ('usuario', 'equipamento', 'livro', 'data_solicitacao')
     search_fields = ('usuario__username', 'usuario__first_name')

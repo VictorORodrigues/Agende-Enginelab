@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prazo de devolução atingido</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f7f6;font-family:Arial,sans-serif;">
+  <table align="center" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;background:#ffffff;margin-top:20px;border-radius:8px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.08);border:1px solid #e5e7eb;">
+    <tr>
+      <td style="padding:32px 24px;background:#1a4fd6;color:#ffffff;text-align:center;">
+        <h1 style="margin:0;font-size:24px;font-weight:600;">EngineLab UFC</h1>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:40px 32px;">
+        <h2 style="margin-top:0;color:#1f2328;font-size:20px;font-weight:600;text-align:center;">Aviso de Devolução</h2>
+        <p style="color:#6b7280;font-size:15px;line-height:1.5;text-align:center;margin-bottom:32px;">
+          O prazo para a devolução dos seguintes itens se encerra <strong>hoje</strong>:
+        </p>
+
+        <div style="background-color:#f9fafb;border:1px solid #f3f4f6;border-radius:12px;padding:24px;margin-bottom:32px;">
+          <table width="100%" cellpadding="0" cellspacing="0" border="0">
+            <thead>
+                <tr>
+                    <th style="text-align:left;color:#6b7280;font-size:12px;text-transform:uppercase;padding-bottom:10px;">Item</th>
+                    <th style="text-align:right;color:#6b7280;font-size:12px;text-transform:uppercase;padding-bottom:10px;">Solicitante</th>
+                </tr>
+            </thead>
+            <tbody>
+              {% for emp in emprestimos %}
+              <tr>
+                <td style="padding:8px 0;border-top:1px solid #eee;color:#1f2328;font-size:14px;font-weight:600;">{{ emp.item }}</td>
+                <td style="padding:8px 0;border-top:1px solid #eee;color:#1f2328;font-size:14px;text-align:right;">{{ emp.usuario.get_full_name }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <p style="margin:0;color:#9aa1ac;font-size:12px;line-height:1.5;text-align:center;">
+          Acesse o painel administrativo para confirmar o recebimento assim que os itens forem entregues.
+        </p>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:24px;background-color:#f9fafb;border-top:1px solid #e5e7eb;text-align:center;">
+        <p style="margin:0;color:#9aa1ac;font-size:12px;">&copy; 2024 EngineLab UFC. Todos os direitos reservados.</p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

@@ -11,9 +11,8 @@
     <thead>
       <tr>
         <th>Nome</th>
-        <th>Matrícula</th>
         <th>E-mail</th>
-        <th>Permissões</th>
+        <th>Setores</th>
         <th>Ações</th>
       </tr>
     </thead>
@@ -21,16 +20,20 @@
       {% for subadmin in subadmins %}
       <tr>
         <td>{{ subadmin.user.get_full_name|default:subadmin.user.username }}</td>
-        <td>{{ subadmin.matricula|default:"-" }}</td>
         <td>{{ subadmin.user.email }}</td>
         <td>
-          {% for permissao in subadmin.permissoes.all %}
-          <span class="badge badge-blue">{{ permissao.get_escopo_display }}</span>
+          {% for setor in subadmin.setores_gerenciados.all %}
+          <span class="badge badge-blue">{{ setor.nome }}</span>
+          {% empty %}
+          <span class="badge badge-gray">Nenhum</span>
           {% endfor %}
         </td>
         <td>
-          <a class="btn btn-sm" href="{% url 'editar_subadmin' subadmin.pk %}">Editar</a>
-          <a class="btn btn-sm btn-danger" href="{% url 'excluir_subadmin' subadmin.pk %}">Excluir</a>
+          <a class="btn btn-sm" href="{% url 'editar_subadmin' subadmin.pk %}">Permissões</a>
+          <a class="btn btn-sm btn-danger" href="{% url 'excluir_subadmin' subadmin.pk %}"
+             onclick="confirmarAcao(event, 'Remover SubAdmin', 'Deseja realmente remover os privilégios administrativos deste usuário?')">
+            Remover
+          </a>
         </td>
       </tr>
       {% endfor %}
@@ -38,7 +41,9 @@
   </table>
   {% else %}
   <div class="empty">
-    <div class="empty-icon">⭐</div>
+    <div class="empty-icon">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    </div>
     <div class="empty-title">Nenhum SubAdmin cadastrado.</div>
   </div>
   {% endif %}

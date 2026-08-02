@@ -1,42 +1,292 @@
 {% extends "account/base_dash.html" %}
 {% block content %}
 <div class="page-header">
-  <div><div class="page-title">Meus empréstimos</div></div>
+  <div><div class="page-title">Empréstimo > {{ aba_ativa|capfirst }}</div></div>
 </div>
 
+{% if aba_ativa == 'historico' %}
 <div class="stats-grid">
   <div class="stat-card"><div class="stat-label">Pendentes</div><div class="stat-value">{{ contadores.pendente }}</div></div>
-  <div class="stat-card"><div class="stat-label">Ativos</div><div class="stat-value">{{ contadores.ativo }}</div></div>
-  <div class="stat-card"><div class="stat-label">Finalizados</div><div class="stat-value">{{ contadores.finalizado }}</div></div>
+  <div class="stat-card"><div class="stat-label">Emprestados</div><div class="stat-value">{{ contadores.ativo }}</div></div>
+  <div class="stat-card"><div class="stat-label">Devolvidos</div><div class="stat-value">{{ contadores.finalizado }}</div></div>
   <div class="stat-card"><div class="stat-label">Rejeitados</div><div class="stat-value">{{ contadores.rejeitado }}</div></div>
 </div>
 
-<div class="card" style="padding:0;overflow:hidden">
-  {% if emprestimos %}
+<div class="divider" style="margin: 24px 0"></div>
+
+<form method="get" id="searchForm" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center">
+  <input type="hidden" name="aba" value="historico">
+  <input type="text" name="q" id="searchInput" class="form-input" style="width:250px" placeholder="{% if request.user.perfil.eh_aluno %}Pesquisar item...{% else %}Pesquisar solicitante ou item...{% endif %}" value="{{ search_query|default:'' }}" autocomplete="off">
+
+  <select name="setor" class="form-input filter-select" style="width:180px">
+    <option value="">Todos os setores</option>
+    {% for setor in setores %}
+    <option value="{{ setor.pk }}" {% if setor_selecionado == setor.pk|stringformat:"s" %}selected{% endif %}>{{ setor.nome }}</option>
+    {% endfor %}
+  </select>
+
+  <select name="status" class="form-input filter-select" style="width:160px">
+    <option value="">Todos os status</option>
+    {% for valor, rotulo in status_choices %}
+    <option value="{{ valor }}" {% if status_selecionado == valor %}selected{% endif %}>{{ rotulo }}</option>
+    {% endfor %}
+  </select>
+
+  {% if search_query or setor_selecionado or status_selecionado %}
+    <a href="{% url 'meus_emprestimos' %}?aba=historico" class="btn">Limpar</a>
+  {% endif %}
+</form>
+
+<div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 12px">
+    <div class="form-label" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--text3);margin-bottom:0">
+      {% if request.user.perfil.eh_aluno %}Histórico de Meus Pedidos{% else %}Histórico Geral de Pedidos{% endif %}
+    </div>
+    <div class="tabs" style="margin-bottom:0">
+        <div class="tab active" onclick="switchView('lista', this)">Lista</div>
+        <div class="tab" onclick="switchView('calendario', this)">Calendário</div>
+    </div>
+</div>
+
+<div id="resultsContainer">
+    <div id="view-lista">
+        <div class="card" style="padding:0;overflow:hidden;margin-bottom:32px">
+          {% if emprestimos %}
+          <table>
+            <thead>
+              <tr>
+                {% if not request.user.perfil.eh_aluno %}<th>Solicitante</th>{% endif %}
+                <th>Item</th>
+                <th>Início</th>
+                <th>Devolução prevista</th>
+                <th>Devolução real</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for emprestimo in emprestimos %}
+              <tr>
+                {% if not request.user.perfil.eh_aluno %}
+                <td>
+                    <div style="font-weight: 500">{{ emprestimo.usuario.get_full_name|default:emprestimo.usuario.username }}</div>
+                    <div style="font-size: 11px; color: var(--text3)">{{ emprestimo.usuario.email }}</div>
+                </td>
+                {% endif %}
+                <td>
+                    <div style="font-weight: 500">{{ emprestimo.item }}</div>
+                    <div style="display: flex; gap: 4px; align-items: center; margin-top: 2px">
+                        <span class="badge badge-gray" style="font-size: 10px">{{ emprestimo.item.setor.nome }}</span>
+                        <span class="badge badge-blue" style="font-size: 10px">
+                            {% if emprestimo.equipamento %}{{ emprestimo.equipamento.categoria.nome }}{% else %}{{ emprestimo.livro.categoria.nome }}{% endif %}
+                        </span>
+                    </div>
+                </td>
+                <td>{{ emprestimo.data_inicio|date:"d/m/Y" }}</td>
+                <td>{{ emprestimo.data_final|date:"d/m/Y" }}</td>
+                <td>
+                    {% if emprestimo.data_devolucao %}
+                        {{ emprestimo.data_devolucao|date:"d/m/Y" }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>
+                  {% if emprestimo.status == 'ativo' %}
+                    {% if emprestimo.data_final < hoje %}
+                        <span class="badge badge-red">Atrasado</span>
+                    {% else %}
+                        <span class="badge badge-blue">Emprestado</span>
+                    {% endif %}
+                  {% elif emprestimo.status == 'pendente' %}
+                    <span class="badge badge-amber">Pendente</span>
+                  {% elif emprestimo.status == 'finalizado' %}
+                    {% if emprestimo.data_devolucao and emprestimo.data_devolucao > emprestimo.data_final %}
+                        <span class="badge badge-red" title="Entregue em {{ emprestimo.data_devolucao|date:'d/m/Y' }}">Devolvido com atraso</span>
+                    {% else %}
+                        <span class="badge badge-gray">Devolvido</span>
+                    {% endif %}
+                  {% else %}
+                    <span class="badge badge-red">Rejeitado</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <div class="empty">
+            <div class="empty-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 9.4 7.5 4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" y1="22" x2="12" y2="12"/></svg>
+            </div>
+            <div class="empty-title">
+                {% if request.user.perfil.eh_aluno %}Você ainda não tem solicitações de empréstimo.{% else %}Nenhuma solicitação de empréstimo encontrada.{% endif %}
+            </div>
+          </div>
+          {% endif %}
+        </div>
+    </div>
+
+    <div id="view-calendario" style="display:none">
+        <div class="card" style="margin-bottom:32px">
+            <div id="calendar"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+      const searchForm = document.getElementById('searchForm');
+      const resultsContainer = document.getElementById('resultsContainer');
+      const searchInput = document.getElementById('searchInput');
+
+      let timeout = null;
+
+      function updateResults() {
+        if (!searchForm || !resultsContainer) return;
+        resultsContainer.style.opacity = '0.5';
+        const formData = new FormData(searchForm);
+        const params = new URLSearchParams(formData).toString();
+        const url = `${window.location.pathname}?${params}`;
+
+        window.history.pushState({}, '', url);
+        fetch(url)
+          .then(response => response.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newContent = doc.getElementById('resultsContainer');
+            if (newContent) {
+              resultsContainer.innerHTML = newContent.innerHTML;
+              resultsContainer.style.opacity = '1';
+              // Re-inicializa o calendário se estiver na visão de calendário
+              if (document.querySelector('.tab[onclick*="calendario"]').classList.contains('active')) {
+                  initCalendar();
+              }
+            }
+          });
+      }
+
+      if (searchInput) {
+        searchInput.addEventListener('input', () => {
+          clearTimeout(timeout);
+          timeout = setTimeout(updateResults, 300);
+        });
+      }
+      document.querySelectorAll('.filter-select').forEach(el => {
+        el.addEventListener('change', updateResults);
+      });
+      if (searchForm) {
+        searchForm.addEventListener('submit', (e) => e.preventDefault());
+      }
+    })();
+
+    function switchView(view, el) {
+        document.getElementById('view-lista').style.display = view === 'lista' ? 'block' : 'none';
+        document.getElementById('view-calendario').style.display = view === 'calendario' ? 'block' : 'none';
+
+        el.parentElement.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        el.classList.add('active');
+
+        if (view === 'calendario') {
+            initCalendar();
+        }
+    }
+
+    var calendar;
+    function initCalendar() {
+        var calendarEl = document.getElementById('calendar');
+        if (!calendarEl) return;
+
+        calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            locale: 'pt-br',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek'
+            },
+            buttonText: {
+                today: 'Hoje',
+                month: 'Mês',
+                week: 'Semana'
+            },
+            events: [
+                {% for emp in emprestimos %}
+                {
+                    title: '{{ emp.item|escapejs }}{% if not request.user.perfil.eh_aluno %} - {{ emp.usuario.first_name|escapejs }}{% endif %}',
+                    start: '{{ emp.data_inicio|date:"Y-m-d" }}',
+                    end: '{{ emp.data_final|date:"Y-m-d" }}',
+                    {% if emp.status == 'ativo' %}
+                        color: '{% if emp.data_final < hoje %}#b91c1c{% else %}#1a4fd6{% endif %}',
+                    {% elif emp.status == 'finalizado' %}
+                        color: '#9aa1ac',
+                    {% elif emp.status == 'pendente' %}
+                        color: '#b45309',
+                    {% else %}
+                        color: '#b91c1c',
+                    {% endif %}
+                    extendedProps: {
+                        status: '{{ emp.get_status_display }}',
+                        usuario: '{{ emp.usuario.get_full_name|escapejs }}'
+                    }
+                },
+                {% endfor %}
+            ],
+            eventDidMount: function(info) {
+                info.el.title = info.event.title + ' (' + info.event.extendedProps.status + ')';
+            }
+        });
+        calendar.render();
+    }
+</script>
+{% endif %}
+
+{% if aba_ativa == 'reserva' %}
+<form method="get" id="searchFormReserva" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center">
+  <input type="hidden" name="aba" value="reserva">
+  <input type="text" name="q" id="searchInputReserva" class="form-input" style="width:250px" placeholder="Pesquisar item ou categoria..." value="{{ search_query|default:'' }}" autocomplete="off">
+
+  <select name="setor" class="form-input filter-select-reserva" style="width:180px">
+    <option value="">Todos os setores</option>
+    {% for setor in setores %}
+    <option value="{{ setor.pk }}" {% if setor_selecionado == setor.pk|stringformat:"s" %}selected{% endif %}>{{ setor.nome }}</option>
+    {% endfor %}
+  </select>
+
+  {% if search_query or setor_selecionado %}
+    <a href="{% url 'meus_emprestimos' %}?aba=reserva" class="btn">Limpar</a>
+  {% endif %}
+</form>
+
+<div class="card" id="resultsContainerReserva" style="padding:0;overflow:hidden">
+  {% if itens_reserva %}
   <table>
     <thead>
       <tr>
         <th>Item</th>
-        <th>Início</th>
-        <th>Devolução prevista</th>
-        <th>Status</th>
+        <th>Setor</th>
+        <th>Categoria</th>
+        <th>Status Atual</th>
+        <th style="text-align: right; padding-right: 20px">Ação</th>
       </tr>
     </thead>
     <tbody>
-      {% for emprestimo in emprestimos %}
+      {% for item in itens_reserva %}
       <tr>
-        <td>{{ emprestimo.item }}</td>
-        <td>{{ emprestimo.data_inicio|date:"d/m/Y" }}</td>
-        <td>{{ emprestimo.data_final|date:"d/m/Y" }}</td>
+        <td style="font-weight: 500">{{ item.nome }}</td>
+        <td>{{ item.setor }}</td>
+        <td><span class="badge badge-gray">{{ item.cat }}</span></td>
         <td>
-          {% if emprestimo.status == 'ativo' %}
-          <span class="badge badge-blue">Ativo</span>
-          {% elif emprestimo.status == 'pendente' %}
-          <span class="badge badge-amber">Pendente</span>
-          {% elif emprestimo.status == 'finalizado' %}
-          <span class="badge badge-gray">Finalizado</span>
+          {% if item.status == 'disponivel' %}
+          <span class="badge badge-green">Disponível</span>
           {% else %}
-          <span class="badge badge-red">Rejeitado</span>
+          <span class="badge badge-amber">Emprestado</span>
+          {% endif %}
+        </td>
+        <td style="text-align: right; padding-right: 20px">
+          {% if item.tipo == 'item' %}
+            <a href="{% url 'appointment:solicitar_agendamento' %}?equipamento={{ item.obj.pk }}" class="btn btn-sm btn-primary">Agendar Data</a>
+          {% else %}
+            <a href="{% url 'appointment:solicitar_agendamento' %}?livro={{ item.obj.pk }}" class="btn btn-sm btn-primary">Agendar Data</a>
           {% endif %}
         </td>
       </tr>
@@ -44,10 +294,269 @@
     </tbody>
   </table>
   {% else %}
-  <div class="empty">
-    <div class="empty-icon">📦</div>
-    <div class="empty-title">Você ainda não tem empréstimos.</div>
+  <div class="empty" style="padding:60px 24px">
+    <div class="empty-icon">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+    </div>
+    <div class="empty-title">Nenhum item encontrado para reserva.</div>
   </div>
   {% endif %}
 </div>
+
+<script>
+  (function() {
+    const searchForm = document.getElementById('searchFormReserva');
+    const resultsContainer = document.getElementById('resultsContainerReserva');
+    const searchInput = document.getElementById('searchInputReserva');
+
+    let timeout = null;
+
+    function updateResults() {
+      if (!searchForm || !resultsContainer) return;
+      resultsContainer.style.opacity = '0.5';
+      const formData = new FormData(searchForm);
+      const params = new URLSearchParams(formData).toString();
+      const url = `${window.location.pathname}?${params}`;
+
+      window.history.pushState({}, '', url);
+      fetch(url)
+        .then(response => response.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, 'text/html');
+          const newContent = doc.getElementById('resultsContainerReserva');
+          if (newContent) {
+            resultsContainer.innerHTML = newContent.innerHTML;
+            resultsContainer.style.opacity = '1';
+          }
+        });
+    }
+
+    if (searchInput) {
+      searchInput.addEventListener('input', () => {
+        clearTimeout(timeout);
+        timeout = setTimeout(updateResults, 300);
+      });
+    }
+    document.querySelectorAll('.filter-select-reserva').forEach(el => {
+      el.addEventListener('change', updateResults);
+    });
+    if (searchForm) {
+      searchForm.addEventListener('submit', (e) => e.preventDefault());
+    }
+  })();
+</script>
+{% endif %}
+
+{% if aba_ativa == 'renovacao' %}
+<div class="alert alert-info" style="margin-bottom: 24px">
+    <div style="display:flex; gap:10px; align-items:center">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <div style="font-size: 13px">
+            <strong>Informações sobre renovação:</strong><br>
+            • Você pode renovar cada item até <strong>5 vezes</strong>.<br>
+            • A renovação só é permitida a partir de <strong>2 dias antes</strong> da data de devolução.<br>
+            • Não é possível renovar itens que já estejam <strong>atrasados</strong>.<br>
+            • Não é possível renovar itens que estejam <strong>reservados</strong> por outros(as) usuários(as).
+        </div>
+    </div>
+</div>
+
+<form method="get" id="searchFormRenovacao" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center">
+  <input type="hidden" name="aba" value="renovacao">
+  <input type="text" name="q" id="searchInputRenovacao" class="form-input" style="width:250px" placeholder="Pesquisar por nome ou categoria..." value="{{ search_query|default:'' }}" autocomplete="off">
+
+  <select name="setor" class="form-input filter-select-renovacao" style="width:180px">
+    <option value="">Todos os setores</option>
+    {% for setor in setores %}
+    <option value="{{ setor.pk }}" {% if setor_selecionado == setor.pk|stringformat:"s" %}selected{% endif %}>{{ setor.nome }}</option>
+    {% endfor %}
+  </select>
+
+  {% if search_query or setor_selecionado %}
+    <a href="{% url 'meus_emprestimos' %}?aba=renovacao" class="btn">Limpar</a>
+  {% endif %}
+</form>
+
+<div class="card" id="resultsContainerRenovacao" style="padding:0;overflow:hidden">
+  {% if emprestimos_ativos %}
+  <table>
+    <thead>
+      <tr>
+        {% if not request.user.perfil.eh_aluno %}<th>Aluno</th>{% endif %}
+        <th>Item</th>
+        <th>Categoria</th>
+        <th>Devolução prevista</th>
+        <th style="text-align: center">Renovações</th>
+        <th style="text-align: right; padding-right: 20px">Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for emp in emprestimos_ativos %}
+      <tr>
+        {% if not request.user.perfil.eh_aluno %}
+        <td>
+            <div style="font-weight: 500">{{ emp.usuario.get_full_name|default:emp.usuario.username }}</div>
+            <div style="font-size: 11px; color: var(--text3)">{{ emp.usuario.email }}</div>
+        </td>
+        {% endif %}
+        <td>
+            <div style="font-weight: 500">
+                {% if emp.equipamento %}{{ emp.equipamento.nome }}{% else %}{{ emp.livro.titulo }}{% endif %}
+            </div>
+            <div style="font-size: 11px; color: var(--text3)">
+                {% if emp.equipamento %}{{ emp.equipamento.setor.nome }}{% else %}{{ emp.livro.setor.nome }}{% endif %}
+            </div>
+        </td>
+        <td>
+            <span class="badge badge-gray">
+                {% if emp.equipamento %}{{ emp.equipamento.categoria.nome }}{% else %}{{ emp.livro.categoria.nome }}{% endif %}
+            </span>
+        </td>
+        <td>
+            <div {% if emp.data_final < hoje %}style="color: var(--red); font-weight: 600"{% endif %}>
+                {{ emp.data_final|date:"d/m/Y" }}
+            </div>
+        </td>
+        <td style="text-align: center">{{ emp.vezes_renovado }} / 5</td>
+        <td style="text-align: right; padding-right: 20px">
+          {% if emp.pode_renovar %}
+          <form method="post" action="{% url 'renovar_emprestimo' emp.pk %}" style="display:inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-primary">Renovar</button>
+          </form>
+          {% else %}
+            {% if "Obrigatório entregar" in emp.motivo_bloqueio %}
+                <span class="badge badge-red" title="{{ emp.motivo_bloqueio }}">Obrigatório entregar</span>
+            {% else %}
+                <span class="badge badge-gray" title="{{ emp.motivo_bloqueio }}">Indisponível</span>
+            {% endif %}
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty" style="padding:60px 24px">
+    <div class="empty-icon">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
+    </div>
+    <div class="empty-title">
+        {% if request.user.perfil.eh_aluno %}Você não possui itens emprestados para renovação.{% else %}Não há itens emprestados sob sua gerência.{% endif %}
+    </div>
+    {% if request.user.perfil.eh_aluno %}
+    <p style="color:var(--text3); font-size: 13px">Itens aprovados pelo administrador aparecerão aqui.</p>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<script>
+  (function() {
+    const searchForm = document.getElementById('searchFormRenovacao');
+    const resultsContainer = document.getElementById('resultsContainerRenovacao');
+    const searchInput = document.getElementById('searchInputRenovacao');
+
+    let timeout = null;
+
+    function updateResults() {
+      if (!searchForm || !resultsContainer) return;
+      resultsContainer.style.opacity = '0.5';
+      const formData = new FormData(searchForm);
+      const params = new URLSearchParams(formData).toString();
+      const url = `${window.location.pathname}?${params}`;
+
+      window.history.pushState({}, '', url);
+      fetch(url)
+        .then(response => response.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, 'text/html');
+          const newContent = doc.getElementById('resultsContainerRenovacao');
+          if (newContent) {
+            resultsContainer.innerHTML = newContent.innerHTML;
+            resultsContainer.style.opacity = '1';
+          }
+        });
+    }
+
+    if (searchInput) {
+      searchInput.addEventListener('input', () => {
+        clearTimeout(timeout);
+        timeout = setTimeout(updateResults, 300);
+      });
+    }
+    document.querySelectorAll('.filter-select-renovacao').forEach(el => {
+      el.addEventListener('change', updateResults);
+    });
+    if (searchForm) {
+      searchForm.addEventListener('submit', (e) => e.preventDefault());
+    }
+  })();
+</script>
+{% endif %}
+
+{% if aba_ativa == 'debito' %}
+{% if not request.user.perfil.eh_aluno %}
+<div class="form-label" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--text3);margin-bottom:12px">Relatório de Alunos em Débito</div>
+{% endif %}
+
+<div class="card" style="padding:0;overflow:hidden">
+  {% if debitos %}
+  <table>
+    <thead>
+      <tr>
+        {% if not request.user.perfil.eh_aluno %}<th>Aluno</th>{% endif %}
+        <th>Item</th>
+        <th>Retirada</th>
+        <th>Prazo Devolução</th>
+        <th>Atraso</th>
+        <th style="text-align: right; padding-right: 20px">Ação</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for debito in debitos %}
+      <tr>
+        {% if not request.user.perfil.eh_aluno %}
+        <td>
+            <div style="font-weight: 500">{{ debito.usuario.get_full_name|default:debito.usuario.username }}</div>
+            <div style="font-size: 11px; color: var(--text3)">{{ debito.usuario.email }}</div>
+        </td>
+        {% endif %}
+        <td>
+            <div style="font-weight: 500">{{ debito.item }}</div>
+            <div style="font-size: 11px; color: var(--text3)">{{ debito.item.setor.nome }}</div>
+        </td>
+        <td>{{ debito.data_inicio|date:"d/m/Y" }}</td>
+        <td style="color: var(--danger); font-weight: 600">{{ debito.data_final|date:"d/m/Y" }}</td>
+        <td>
+            <span class="badge badge-red">Atrasado ({{ debito.dias_atraso }} dias)</span>
+        </td>
+        <td style="text-align: right; padding-right: 20px">
+          {% if not request.user.perfil.eh_aluno %}
+            <form method="post" action="{% url 'finalizar_emprestimo' debito.pk %}" style="display:inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-success" onclick="confirmarAcao(event, 'Finalizar Empréstimo', 'Confirma a devolução deste item em débito?')">Receber</button>
+            </form>
+          {% else %}
+            <span class="badge badge-amber">Procure o Lab</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty" style="padding:60px 24px">
+    <div class="empty-icon" style="color: var(--success)">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    </div>
+    <div class="empty-title">Nenhum débito encontrado.</div>
+    <p style="color:var(--text3); font-size: 13px">{% if request.user.perfil.eh_aluno %}Você está em dia com suas devoluções!{% else %}Todos os itens foram devolvidos no prazo.{% endif %}</p>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
 {% endblock %}

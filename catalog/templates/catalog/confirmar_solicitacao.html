@@ -1,20 +1,72 @@
 {% extends "account/base_dash.html" %}
+{% load widget_tweaks %}
 {% block content %}
 <div class="modal-overlay open">
   <div class="modal">
-    <div class="modal-title">Solicitar empréstimo</div>
-    <div class="modal-sub">Você está solicitando o empréstimo de <strong>{{ item }}</strong>.</div>
-    <form method="post">
+    <div class="modal-title">{% if modo_direto %}Realizar Empréstimo{% else %}Solicitar empréstimo{% endif %}</div>
+    <div class="modal-sub">
+        {% if modo_direto %}
+            Você está realizando o empréstimo direto de <strong>{{ item }}</strong> para um usuário.
+        {% else %}
+            Você está solicitando o empréstimo de <strong>{{ item }}</strong>.
+        {% endif %}
+    </div>
+
+    <form method="post" id="loanForm">
       {% csrf_token %}
-      <div class="form-group">
-        <label class="form-label" for="data_final">Data de devolução prevista</label>
-        <input type="date" name="data_final" id="data_final" class="form-input" required>
+
+      {% if form.non_field_errors %}
+      <div class="alert alert-danger" style="margin-bottom: 16px">
+        {% for error in form.non_field_errors %}{{ error }}{% endfor %}
       </div>
+      {% endif %}
+
+      {% if modo_direto %}
+          <div class="form-group">
+            <label class="form-label">{{ form.usuario.label }}</label>
+            {{ form.usuario|add_class:"form-input" }}
+            {% for error in form.usuario.errors %}<div class="text-danger" style="font-size: 11px">{{ error }}</div>{% endfor %}
+          </div>
+          <div class="form-group">
+            <label class="form-label">{{ form.data_final.label }}</label>
+            {{ form.data_final|add_class:"form-input" }}
+            {% for error in form.data_final.errors %}<div class="text-danger" style="font-size: 11px">{{ error }}</div>{% endfor %}
+          </div>
+      {% else %}
+          <div class="form-group">
+            <label class="form-label" for="data_final">Data de devolução prevista</label>
+            <input type="date" name="data_final" id="data_final" class="form-input" required>
+          </div>
+      {% endif %}
+
       <div class="modal-actions">
-        <a class="btn" href="{% if tipo == 'equipamento' %}{% url 'equipamentos' %}{% else %}{% url 'livros' %}{% endif %}">Cancelar</a>
-        <button type="submit" class="btn btn-primary">Solicitar</button>
+        <a class="btn" href="{% if modo_direto %}{% url 'itens_setor' item.setor.pk %}{% elif tipo == 'equipamento' %}{% url 'equipamentos' %}{% else %}{% url 'livros' %}{% endif %}">Cancelar</a>
+        <button type="submit" class="btn btn-primary" id="submitBtn">{% if modo_direto %}Confirmar Empréstimo{% else %}Solicitar{% endif %}</button>
       </div>
     </form>
   </div>
 </div>
+
+<script>
+  // Define a data mínima como hoje e máxima como daqui a 1 ano no seletor
+  const now = new Date();
+  const today = now.toISOString().split('T')[0];
+
+  const nextMonth = new Date();
+  nextMonth.setDate(now.getDate() + 30);
+  const maxDate = nextMonth.toISOString().split('T')[0];
+
+  const dateInput = document.querySelector('input[type="date"]');
+  if (dateInput) {
+      dateInput.setAttribute('min', today);
+      dateInput.setAttribute('max', maxDate);
+  }
+
+  // Impede múltiplos cliques no botão de solicitar
+  document.getElementById('loanForm').addEventListener('submit', function() {
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerText = 'Processando...';
+  });
+</script>
 {% endblock %}

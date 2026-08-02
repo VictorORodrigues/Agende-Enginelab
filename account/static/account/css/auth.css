@@ -7,3 +7,33 @@
 .auth-link:hover { text-decoration: underline; }
 .auth-footer { text-align: center; margin-top: 16px; font-size: 13px; color: var(--text2); }
 .status-icon { width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 28px; }
+
+/* Password visibility toggle */
+.password-wrapper {
+  position: relative;
+  width: 100%;
+}
+.password-wrapper .form-input {
+  padding-right: 40px !important;
+  margin-bottom: 0;
+}
+.password-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: var(--text2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+  padding: 4px;
+}
+.password-toggle:hover {
+  color: var(--brand);
+}
+.password-toggle i {
+  font-size: 1.1rem;
+  line-height: 1;
+}

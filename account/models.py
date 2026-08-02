@@ -4,8 +4,8 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 class Setor(models.Model):
-    nome = models.CharField(max_length=100, unique=True)
-    descricao = models.TextField(blank=True, null=True)
+    nome = models.CharField(max_length=100, unique=True, verbose_name="Nome")
+    descricao = models.TextField(blank=True, null=True, verbose_name="Descrição")
     def __str__(self):
         return self.nome
 
@@ -30,7 +30,7 @@ class Perfil(models.Model):
     tipo = models.CharField(max_length=10, choices=TIPO_USUARIO, default='ALUNO')
     matricula = models.CharField(max_length=20, unique=True, null=True, blank=True)
     telefone = models.CharField(max_length=15, null=True, blank=True)
-    setor = models.ForeignKey(Setor, on_delete=models.SET_NULL, null=True, blank=True, related_name='responsaveis')
+    setores_gerenciados = models.ManyToManyField(Setor, blank=True, related_name='subadmins', through='JurisdicaoSubAdmin')
     token_aprovacao = models.CharField(max_length=64, unique=True, null=True, blank=True)
 
     def __str__(self):
@@ -61,35 +61,47 @@ class Perfil(models.Model):
         if self.eh_admin:
             return True
         if self.eh_subadm:
-            return self.permissoes.filter(escopo=escopo).exists()  # via PermissaoSubAdmin.subadmin
+            if escopo == 'item':
+                return self.jurisdicoes.filter(pode_gerenciar_itens=True).exists()
+            if escopo == 'emprestimo':
+                return self.jurisdicoes.filter(pode_gerenciar_emprestimos=True).exists()
+            return self.setores_gerenciados.exists()
+        return False
+
+    def gerencia_setor(self, setor, permissao=None):
+        if self.eh_admin:
+            return True
+        if self.eh_subadm:
+            qs = self.jurisdicoes.filter(setor=setor)
+            if permissao == 'item':
+                return qs.filter(pode_gerenciar_itens=True).exists()
+            if permissao == 'emprestimo':
+                return qs.filter(pode_gerenciar_emprestimos=True).exists()
+            return qs.exists()
         return False
 
     @property
-    def pode_gerenciar_equipamentos(self):
-        return self.tem_permissao('equipamento')
+    def pode_gerenciar_itens_geral(self):
+        return self.tem_permissao('item')
 
 
-class PermissaoSubAdmin(models.Model):
-    ESCOPO_EQUIPAMENTO = 'equipamento'
-    ESCOPO_LIVRO = 'livro'
-    ESCOPO_AGENDAMENTO = 'agendamento'
-    ESCOPO_EMPRESTIMO = 'emprestimo'
-
-    ESCOPO_CHOICES = [
-        (ESCOPO_EQUIPAMENTO, 'Equipamento'),
-        (ESCOPO_LIVRO, 'Livro'),
-        (ESCOPO_AGENDAMENTO, 'Agendamento'),
-        (ESCOPO_EMPRESTIMO, 'Empréstimo'),
-    ]
-
-    subadmin = models.ForeignKey(Perfil, on_delete=models.CASCADE, related_name='permissoes')
-    escopo = models.CharField(max_length=20, choices=ESCOPO_CHOICES)
+class JurisdicaoSubAdmin(models.Model):
+    subadmin = models.ForeignKey(Perfil, on_delete=models.CASCADE, related_name='jurisdicoes')
+    setor = models.ForeignKey(Setor, on_delete=models.CASCADE)
+    pode_gerenciar_itens = models.BooleanField(default=False, verbose_name="Gerenciar Itens")
+    pode_gerenciar_emprestimos = models.BooleanField(default=False, verbose_name="Gerenciar Empréstimos")
 
     class Meta:
-        unique_together = ['subadmin', 'escopo']
+        unique_together = ['subadmin', 'setor']
 
     def __str__(self):
-        return f"{self.subadmin} — {self.get_escopo_display()}"
+        return f"{self.subadmin.user.email} no setor {self.setor.nome}"
+
+
+# O modelo PermissaoSubAdmin antigo pode ser removido pois a nova lógica o substitui
+# Vou apenas comentá-lo para evitar erros de importação imediatos se houver algum
+# class PermissaoSubAdmin(models.Model): ...
+
 
 
 # --- SIGNALS: Isto garante que o Perfil exista sempre ---

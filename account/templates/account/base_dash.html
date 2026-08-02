@@ -6,10 +6,11 @@
   <title>{% block title %}EngineLab UFC{% endblock %}</title>
   <link rel="stylesheet" href="{% static 'account/css/base.css' %}">
   <link rel="stylesheet" href="{% static 'account/css/dash.css' %}">
+  <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
 </head>
 <body>
   <div class="topbar">
-    <a class="topbar-brand" href="{% url 'appointment:home' %}"><span>L</span> EngineLab UFC</a>
+    <a class="topbar-brand" href="{% url 'admin_equipamentos' %}"><span>L</span> EngineLab UFC</a>
     <div class="topbar-actions">
       <div class="profile-wrap">
         <button class="topbar-user profile-btn" id="profileBtn" type="button">
@@ -20,28 +21,24 @@
         <div class="profile-dropdown" id="profileDropdown">
           <div>
             <div class="detail-row">
-              <span class="detail-key">Matrícula</span>
+              <span class="detail-key">{% if request.user.perfil.eh_aluno %}Matrícula{% else %}E-mail{% endif %}</span>
               <span class="detail-val">{{ request.user.perfil.matricula|default:request.user.username }}</span>
             </div>
             <div class="detail-row">
               <span class="detail-key">Perfil</span>
               <span class="detail-val">{{ request.user.perfil.get_tipo_display }}</span>
             </div>
-            <div class="detail-row">
-              <span class="detail-key">Status</span>
-              <span class="detail-val">
-                {% with s=request.user.perfil.status %}
-                <span class="badge {% if s == 'ATIVO' %}badge-green{% elif s == 'REJEITADO' %}badge-red{% else %}badge-amber{% endif %}">{{ request.user.perfil.get_status_display }}</span>
-                {% endwith %}
-              </span>
-            </div>
           </div>
-          <div style="margin-top:12px">
+          <div style="margin-top:12px; display:flex; flex-direction:column; gap:8px">
             <a class="btn btn-sm" href="{% url 'password_reset' %}">Redefinir senha</a>
+            <button type="button" class="btn btn-sm btn-danger" onclick="abrirModalExcluirConta()">Excluir conta</button>
           </div>
         </div>
       </div>
-      <a class="btn btn-sm" href="{% url 'logout' %}">Sair</a>
+      <form action="{% url 'logout' %}" method="post" style="display:inline">
+        {% csrf_token %}
+        <button class="btn btn-sm" type="submit">Sair</button>
+      </form>
     </div>
   </div>
 
@@ -49,49 +46,52 @@
     <nav class="sidebar">
       <div style="padding:8px 6px">
         <div class="sidebar-section">Geral</div>
-        {% if request.user.perfil.eh_admin or request.user.perfil.eh_subadm %}
-        <a class="nav-item {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'appointment:home' %}">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
-          Dashboard
-        </a>
-        {% endif %}
         <a class="nav-item {% if request.resolver_match.url_name == 'meus_agendamentos' %}active{% endif %}" href="{% url 'appointment:meus_agendamentos' %}">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z"/><path d="M5 6h6M5 9h4"/></svg>
-          Agendamentos
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="10" height="10" rx="1"/><path d="M3 7h10M8 10v4M5 2v4M11 2v4"/></svg>
+          Agendamento
         </a>
+        <div class="nav-group">
+          <a class="nav-item {% if request.resolver_match.url_name == 'meus_emprestimos' %}active{% endif %}" href="{% url 'meus_emprestimos' %}?aba=historico" onclick="toggleNavGroup(event, this)">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z"/><path d="M5 6h6M5 9h4"/></svg>
+            Empréstimo
+            <svg class="chevron-nav" width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-left:auto; transition: transform 0.2s"><path d="M2 4l4 4 4-4"/></svg>
+          </a>
+          <div class="nav-sub-items" style="display: none; padding-left: 12px; flex-direction: column; gap: 4px; margin-top: 4px">
+            <a href="{% url 'meus_emprestimos' %}?aba=renovacao" class="nav-item sub-nav-item {% if aba_ativa == 'renovacao' %}active{% endif %}" style="font-size: 12px">Renovação</a>
+            <a href="{% url 'meus_emprestimos' %}?aba=reserva" class="nav-item sub-nav-item {% if aba_ativa == 'reserva' %}active{% endif %}" style="font-size: 12px">Reserva</a>
+            <a href="{% url 'meus_emprestimos' %}?aba=debito" class="nav-item sub-nav-item {% if aba_ativa == 'debito' %}active{% endif %}" style="font-size: 12px">Débito</a>
+            <a href="{% url 'meus_emprestimos' %}?aba=historico" class="nav-item sub-nav-item {% if aba_ativa == 'historico' %}active{% endif %}" style="font-size: 12px">Histórico</a>
+          </div>
+        </div>
 
-        <div class="sidebar-section">Acervo</div>
-        <a class="nav-item {% if request.resolver_match.url_name == 'equipamentos' %}active{% endif %}" href="{% url 'equipamentos' %}">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="9" rx="1"/><path d="M5 12v2M11 12v2M3 14h10"/></svg>
-          Equipamentos
-        </a>
-        <a class="nav-item {% if request.resolver_match.url_name == 'livros' %}active{% endif %}" href="{% url 'livros' %}">
+        <div class="sidebar-section">Setores</div>
+        {% for setor in todos_setores %}
+        <a class="nav-item {% if request.resolver_match.url_name == 'itens_setor' and request.resolver_match.kwargs.setor_id == setor.id|stringformat:'i' %}active{% endif %}" href="{% url 'itens_setor' setor.id %}">
+          {% if "biblioteca" in setor.nome.lower or "livro" in setor.nome.lower %}
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 2h6v12H2zM9 2h5v12H9z"/></svg>
-          Livros
+          {% elif "ti" in setor.nome.lower or "computador" in setor.nome.lower or "informática" in setor.nome.lower %}
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="9" rx="1"/><path d="M5 12v2M11 12v2M3 14h10"/></svg>
+          {% else %}
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2a6 6 0 1 0 0 12A6 6 0 0 0 8 2z"/><circle cx="8" cy="8" r="1.5"/></svg>
+          {% endif %}
+          {{ setor.nome }}
         </a>
-        <a class="nav-item {% if request.resolver_match.url_name == 'fila_espera' %}active{% endif %}" href="{% url 'fila_espera' %}">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M2 8h8M2 12h10"/></svg>
-          Fila de espera
-        </a>
-        <a class="nav-item {% if request.resolver_match.url_name == 'meus_emprestimos' %}active{% endif %}" href="{% url 'meus_emprestimos' %}">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z"/><path d="M5 6h6M5 9h4"/></svg>
-          Meus empréstimos
-        </a>
+        {% endfor %}
 
         {% if request.user.perfil.eh_subadm or request.user.perfil.eh_admin %}
         <div class="sidebar-section">Administração</div>
         <a class="nav-item {% if request.resolver_match.url_name == 'gerenciar_agendamentos' %}active{% endif %}" href="{% url 'appointment:gerenciar_agendamentos' %}">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 3h12v2H2zM2 7h12v2H2zM2 11h12v2H2z"/></svg>
-          Agendamentos pendentes
+          Agendamentos
         </a>
         <a class="nav-item {% if request.resolver_match.url_name == 'admin_emprestimos' %}active{% endif %}" href="{% url 'admin_emprestimos' %}">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z"/><path d="M5 6h6M5 9h4"/></svg>
-          Empréstimos pendentes
+          Empréstimos
         </a>
-        {% if request.user.perfil.pode_gerenciar_equipamentos %}
+        {% if request.user.perfil.eh_admin or request.user.perfil.pode_gerenciar_itens_geral %}
         <a class="nav-item {% if request.resolver_match.url_name == 'admin_equipamentos' or request.resolver_match.url_name == 'equipamento_criar' or request.resolver_match.url_name == 'equipamento_editar' or request.resolver_match.url_name == 'categoria_criar' or request.resolver_match.url_name == 'categoria_editar' %}active{% endif %}" href="{% url 'admin_equipamentos' %}">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="9" rx="1"/><path d="M5 12v2M11 12v2M3 14h10"/></svg>
-          Gerenciar equipamentos
+          Gerenciar itens
         </a>
         {% endif %}
         {% endif %}
@@ -104,6 +104,10 @@
         <a class="nav-item {% if request.resolver_match.url_name == 'admin_subadmins' %}active{% endif %}" href="{% url 'admin_subadmins' %}">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1l1.5 3h3l-2.5 2 1 3L8 7.5 5 9l1-3L3.5 4h3z"/></svg>
           SubAdmins
+        </a>
+        <a class="nav-item {% if request.resolver_match.url_name == 'admin_setores' %}active{% endif %}" href="{% url 'admin_setores' %}">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2a6 6 0 1 0 0 12A6 6 0 0 0 8 2z"/><circle cx="8" cy="8" r="1.5"/></svg>
+          Setores
         </a>
         {% endif %}
       </div>
@@ -119,6 +123,24 @@
       {% block content %}{% endblock %}
     </main>
   </div>
+
+  <!-- Modal Excluir Conta -->
+  <div id="modalExcluirConta" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-title">Excluir sua conta?</div>
+      <div class="modal-sub">
+        Esta ação é <strong>permanente</strong>. Todos os seus dados e histórico serão removidos definitivamente do sistema.
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn" onclick="fecharModalExcluirConta()">Cancelar</button>
+        <form method="post" action="{% url 'excluir_conta' %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">Sim, excluir conta</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <script>
     (function () {
       var btn = document.getElementById('profileBtn');
@@ -133,6 +155,88 @@
         btn.classList.remove('open');
       });
     })();
+
+    function abrirModalExcluirConta() {
+      document.getElementById('modalExcluirConta').classList.add('open');
+    }
+    function fecharModalExcluirConta() {
+      document.getElementById('modalExcluirConta').classList.remove('open');
+    }
+
+    // Modal de Confirmação Genérico
+    function confirmarAcao(event, titulo, mensagem, corBotao = 'btn-danger', textoBotao = 'Confirmar') {
+      event.preventDefault();
+      const form = event.target.closest('form');
+
+      // Cria o HTML do modal dinamicamente
+      const modalHtml = `
+        <div id="modalConfirmacaoGeral" class="modal-overlay open">
+          <div class="modal">
+            <div class="modal-title">${titulo}</div>
+            <div class="modal-sub">${mensagem}</div>
+            <div class="modal-actions">
+              <button type="button" class="btn" onclick="fecharModalConfirmacao()">Cancelar</button>
+              <button type="button" class="btn ${corBotao}" onclick="executarFormConfirmado()">${textoBotao}</button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+      window.formParaExecutar = form;
+    }
+
+    function fecharModalConfirmacao() {
+      const modal = document.getElementById('modalConfirmacaoGeral');
+      if (modal) modal.remove();
+    }
+
+    function executarFormConfirmado() {
+      if (window.formParaExecutar) {
+        window.formParaExecutar.submit();
+      }
+    }
+
+    // Fecha modais ao clicar fora
+    window.addEventListener('click', function(event) {
+      const modalExcluir = document.getElementById('modalExcluirConta');
+      if (event.target == modalExcluir) {
+        fecharModalExcluirConta();
+      }
+      const modalGeral = document.getElementById('modalConfirmacaoGeral');
+      if (event.target == modalGeral) {
+        fecharModalConfirmacao();
+      }
+    });
+
+    function toggleNavGroup(event, element) {
+      event.preventDefault();
+      const group = element.closest('.nav-group');
+      const subItems = group.querySelector('.nav-sub-items');
+      const chevron = element.querySelector('.chevron-nav');
+
+      if (subItems.style.display === 'none' || subItems.style.display === '') {
+          subItems.style.display = 'flex';
+          chevron.style.transform = 'rotate(180deg)';
+      } else {
+          subItems.style.display = 'none';
+          chevron.style.transform = 'rotate(0deg)';
+      }
+    }
+
+    // Mantém aberto se estiver em uma das sub-abas
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const subItems = document.querySelector('.nav-sub-items');
+        const chevron = document.querySelector('.chevron-nav');
+
+        if (urlParams.has('aba') || window.location.pathname.includes('emprestimo')) {
+            if (subItems) {
+                subItems.style.display = 'flex';
+                if (chevron) chevron.style.transform = 'rotate(180deg)';
+            }
+        }
+    });
   </script>
 </body>
 </html>

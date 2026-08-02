@@ -34,14 +34,15 @@ ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv(
 # Configurações de E-mail lendo do .env
 EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
 EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
+EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
 
 EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 EMAIL_ADMIN_LAB = config('EMAIL_ADMIN_LAB', default=EMAIL_HOST_USER)
 
-DEFAULT_FROM_EMAIL = f'EngineLab UFC <{EMAIL_HOST_USER}>'
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default=f'EngineLab UFC <{EMAIL_HOST_USER}>')
+EMAIL_SUBJECT_PREFIX = '[EngineLab] '
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -63,13 +64,14 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'account.middleware.ActiveUserMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
 ROOT_URLCONF = 'agende_enginelab.urls'
 
 LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = 'appointment:home'
+LOGIN_REDIRECT_URL = 'admin_equipamentos'
 LOGOUT_REDIRECT_URL = 'login'
 
 ACCOUNT_MAX_FAILED_LOGINS_PER_MINUTE = config('ACCOUNT_MAX_FAILED_LOGINS_PER_MINUTE', default=5, cast=int)
@@ -87,6 +89,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'account.context_processors.setores_processor',
             ],
         },
     },
@@ -176,6 +179,10 @@ USE_I18N = True
 
 USE_TZ = True
 
+AUTHENTICATION_BACKENDS = [
+    'account.backends.DualAuthenticationBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/

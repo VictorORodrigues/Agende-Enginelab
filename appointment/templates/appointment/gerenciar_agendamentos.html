@@ -1,52 +1,230 @@
 {% extends "account/base_dash.html" %}
 {% block content %}
 <div class="page-header">
-  <div><div class="page-title">Agendamentos pendentes</div></div>
+  <div><div class="page-title">Agendamentos</div></div>
 </div>
 
-<div class="card" style="padding:0;overflow:hidden">
-{% if agendamentos %}
-  <table>
-    <thead>
-      <tr>
-        <th>Solicitante</th>
-        <th>Setor</th>
-        <th>Data</th>
-        <th>Início</th>
-        <th>Fim</th>
-        <th>Motivo</th>
-        <th>Ações</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for agendamento in agendamentos %}
-      <tr>
-        <td>{{ agendamento.usuario.get_full_name|default:agendamento.usuario.username }}</td>
-        <td>{{ agendamento.setor.nome }}</td>
-        <td>{{ agendamento.data|date:"d/m/Y" }}</td>
-        <td>{{ agendamento.hora_inicio|time:"H:i" }}</td>
-        <td>{{ agendamento.hora_fim|time:"H:i" }}</td>
-        <td>{{ agendamento.motivo|default:"-" }}</td>
-        <td>
-          <form method="post" action="{% url 'appointment:aprovar_agendamento' agendamento.pk %}">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-sm btn-success">Aprovar</button>
-          </form>
-          <form method="post" action="{% url 'appointment:recusar_agendamento' agendamento.pk %}"
-                onsubmit="return confirm('Recusar este agendamento?');">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-sm btn-danger">Recusar</button>
-          </form>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-{% else %}
-  <div class="empty">
-    <div class="empty-icon">📅</div>
-    <div class="empty-title">Nenhum agendamento pendente no momento.</div>
+<form method="get" id="searchForm" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center">
+  <input type="text" name="q" id="searchInput" class="form-input" style="width:250px" placeholder="Solicitante ou item..." value="{{ search_query|default:'' }}" autocomplete="off">
+
+  <select name="setor" class="form-input filter-select" style="width:180px">
+    <option value="">Todos os setores</option>
+    {% for setor in setores %}
+    <option value="{{ setor.pk }}" {% if setor_selecionado == setor.pk|stringformat:"s" %}selected{% endif %}>{{ setor.nome }}</option>
+    {% endfor %}
+  </select>
+
+  <select name="status" class="form-input filter-select" style="width:160px">
+    <option value="">Todos os status</option>
+    {% for valor, rotulo in status_choices %}
+    <option value="{{ valor }}" {% if status_selecionado == valor %}selected{% endif %}>{{ rotulo }}</option>
+    {% endfor %}
+  </select>
+
+  <div style="display:flex;align-items:center;gap:4px">
+    <span style="font-size:12px;color:var(--text3)">Data:</span>
+    <input type="date" name="data" class="form-input filter-select" style="width:135px" value="{{ data_selecionada }}">
   </div>
-{% endif %}
+
+  {% if search_query or status_selecionado or setor_selecionado or data_selecionada %}
+    <a href="{% url 'appointment:gerenciar_agendamentos' %}" class="btn">Limpar</a>
+  {% endif %}
+</form>
+
+<div style="display:flex; justify-content: flex-end; align-items: center; margin-bottom: 12px">
+    <div class="tabs" style="margin-bottom:0">
+        <div class="tab active" onclick="switchView('lista', this)">Lista</div>
+        <div class="tab" onclick="switchView('calendario', this)">Calendário</div>
+    </div>
 </div>
+
+<div id="resultsContainer">
+    <div id="view-lista">
+        <div class="card" style="padding:0;overflow:hidden">
+          {% if agendamentos %}
+          <table>
+            <thead>
+              <tr>
+                <th>Solicitante</th>
+                <th>Setor</th>
+                <th>Item Vinculado</th>
+                <th>Data</th>
+                <th>Horário</th>
+                <th>Status</th>
+                <th style="text-align: right; padding-right: 20px">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for agendamento in agendamentos %}
+              <tr>
+                <td>{{ agendamento.usuario.get_full_name|default:agendamento.usuario.username }}</td>
+                <td>{{ agendamento.setor.nome }}</td>
+                <td>
+                    {% if agendamento.equipamento %}
+                        <span class="badge badge-blue">Item: {{ agendamento.equipamento.nome }}</span>
+                    {% elif agendamento.livro %}
+                        <span class="badge badge-blue">Livro: {{ agendamento.livro.titulo }}</span>
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>{{ agendamento.data|date:"d/m/Y" }}</td>
+                <td>
+                  {% if agendamento.dia_inteiro %}
+                    Dia Inteiro
+                  {% else %}
+                    {{ agendamento.hora_inicio|time:"H:i" }} - {{ agendamento.hora_fim|time:"H:i" }}
+                  {% endif %}
+                </td>
+                <td>
+                    {% if agendamento.status == 'PENDENTE' %}
+                    <span class="badge badge-amber">Pendente</span>
+                    {% elif agendamento.status == 'APROVADO' %}
+                    <span class="badge badge-green">Aprovado</span>
+                    {% elif agendamento.status == 'RECUSADO' %}
+                    <span class="badge badge-red">Recusado</span>
+                    {% else %}
+                    <span class="badge badge-gray">Cancelado</span>
+                    {% endif %}
+                </td>
+                <td style="text-align: right; padding-right: 20px">
+                  {% if agendamento.status == 'PENDENTE' %}
+                  <form method="post" action="{% url 'appointment:aprovar_agendamento' agendamento.pk %}" style="display:inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-success">Aprovar</button>
+                  </form>
+                  <form method="post" action="{% url 'appointment:recusar_agendamento' agendamento.pk %}" style="display:inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-danger" onclick="confirmarAcao(event, 'Recusar Agendamento', 'Deseja realmente recusar este agendamento?')">Recusar</button>
+                  </form>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <div class="empty" style="padding:60px 24px">
+            <div class="empty-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h12M2 8h8M2 12h10"/></svg>
+            </div>
+            <div class="empty-title">Nenhum agendamento encontrado.</div>
+          </div>
+          {% endif %}
+        </div>
+    </div>
+
+    <div id="view-calendario" style="display:none">
+        <div class="card" style="margin-bottom:32px">
+            <div id="calendar"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+      const searchForm = document.getElementById('searchForm');
+      const resultsContainer = document.getElementById('resultsContainer');
+      const searchInput = document.getElementById('searchInput');
+
+      let timeout = null;
+
+      function updateResults() {
+        if (!searchForm || !resultsContainer) return;
+        resultsContainer.style.opacity = '0.5';
+        const formData = new FormData(searchForm);
+        const params = new URLSearchParams(formData).toString();
+        const url = `${window.location.pathname}?${params}`;
+
+        window.history.pushState({}, '', url);
+        fetch(url)
+          .then(response => response.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newContent = doc.getElementById('resultsContainer');
+            if (newContent) {
+              resultsContainer.innerHTML = newContent.innerHTML;
+              resultsContainer.style.opacity = '1';
+              if (document.querySelector('.tab[onclick*="calendario"]').classList.contains('active')) {
+                  initCalendar();
+              }
+            }
+          });
+      }
+
+      if (searchInput) {
+        searchInput.addEventListener('input', () => {
+          clearTimeout(timeout);
+          timeout = setTimeout(updateResults, 300);
+        });
+      }
+      document.querySelectorAll('.filter-select').forEach(el => {
+        el.addEventListener('change', updateResults);
+      });
+      if (searchForm) {
+        searchForm.addEventListener('submit', (e) => e.preventDefault());
+      }
+    })();
+
+    function switchView(view, el) {
+        document.getElementById('view-lista').style.display = view === 'lista' ? 'block' : 'none';
+        document.getElementById('view-calendario').style.display = view === 'calendario' ? 'block' : 'none';
+
+        el.parentElement.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        el.classList.add('active');
+
+        if (view === 'calendario') {
+            initCalendar();
+        }
+    }
+
+    var calendar;
+    function initCalendar() {
+        var calendarEl = document.getElementById('calendar');
+        if (!calendarEl) return;
+
+        calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            locale: 'pt-br',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek'
+            },
+            buttonText: {
+                today: 'Hoje',
+                month: 'Mês',
+                week: 'Semana'
+            },
+            events: [
+                {% for agendamento in agendamentos %}
+                {
+                    title: '{{ agendamento.usuario.first_name|escapejs }} - {{ agendamento.setor.nome|escapejs }}',
+                    start: '{{ agendamento.data|date:"Y-m-d" }}{% if not agendamento.dia_inteiro %}T{{ agendamento.hora_inicio|time:"H:i:s" }}{% endif %}',
+                    end: '{{ agendamento.data|date:"Y-m-d" }}{% if not agendamento.dia_inteiro %}T{{ agendamento.hora_fim|time:"H:i:s" }}{% endif %}',
+                    {% if agendamento.status == 'APROVADO' %}
+                        color: '#15803d',
+                    {% elif agendamento.status == 'PENDENTE' %}
+                        color: '#b45309',
+                    {% elif agendamento.status == 'RECUSADO' %}
+                        color: '#b91c1c',
+                    {% else %}
+                        color: '#9aa1ac',
+                    {% endif %}
+                    extendedProps: {
+                        status: '{{ agendamento.get_status_display|escapejs }}',
+                        usuario: '{{ agendamento.usuario.get_full_name|escapejs }}',
+                        setor: '{{ agendamento.setor.nome|escapejs }}'
+                    }
+                },
+                {% endfor %}
+            ],
+            eventDidMount: function(info) {
+                info.el.title = info.event.title + ' (' + info.event.extendedProps.status + ')';
+            }
+        });
+        calendar.render();
+    }
+</script>
 {% endblock %}

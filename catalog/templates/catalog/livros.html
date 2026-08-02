@@ -29,6 +29,7 @@
       <tr>
         <th>Título</th>
         <th>Autor</th>
+        <th>Setor</th>
         <th>Categoria</th>
         <th>Exemplares</th>
         <th>Status</th>
@@ -40,6 +41,7 @@
       <tr>
         <td>{{ livro.titulo }}</td>
         <td>{{ livro.autor }}</td>
+        <td>{{ livro.setor.nome|default:"-" }}</td>
         <td>{{ livro.categoria.nome }}</td>
         <td>{{ livro.exemplares }}</td>
         <td>
@@ -56,8 +58,13 @@
           {% if request.user.perfil.eh_admin %}
           <a class="btn btn-sm btn-danger" href="{% url 'livro_excluir' livro.pk %}">Excluir</a>
           {% endif %}
-          {% if livro.status == 'disponivel' %}
-          <a class="btn btn-sm btn-primary" href="{% url 'solicitar_livro' livro.pk %}">Solicitar empréstimo</a>
+
+          {% if request.user.perfil.eh_aluno %}
+            {% if livro.status == 'disponivel' %}
+                <a class="btn btn-sm btn-primary" href="{% url 'solicitar_livro' livro.pk %}">Solicitar empréstimo</a>
+            {% else %}
+                <a class="btn btn-sm btn-primary" href="{% url 'appointment:solicitar_agendamento' %}?livro={{ livro.pk }}">Agendar</a>
+            {% endif %}
           {% endif %}
         </td>
       </tr>
@@ -66,7 +73,9 @@
   </table>
   {% else %}
   <div class="empty">
-    <div class="empty-icon">📚</div>
+    <div class="empty-icon">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+    </div>
     <div class="empty-title">Nenhum livro encontrado.</div>
   </div>
   {% endif %}

@@ -6,8 +6,17 @@ from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db.utils import OperationalError
 from django.db import IntegrityError
-from .models import Perfil
+from .models import Perfil, Setor
 from .security import get_client_ip, is_locked, failure_counts, register_failure, register_success, limits
+
+class SetorForm(forms.ModelForm):
+    class Meta:
+        model = Setor
+        fields = ['nome', 'descricao']
+        widgets = {
+            'nome': forms.TextInput(attrs={'maxlength': '100', 'placeholder': 'Ex: Laboratório de Hardware'}),
+            'descricao': forms.Textarea(attrs={'maxlength': '500', 'rows': 3, 'placeholder': 'Descrição breve do setor...'}),
+        }
 
 class RegisterForm(forms.ModelForm):
     first_name = forms.CharField(label="Nome Completo", max_length=150)
@@ -25,13 +34,21 @@ class RegisterForm(forms.ModelForm):
         model = User
         fields = ['first_name', 'email']
 
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if email:
+            email = email.lower()
+            if User.objects.filter(email__iexact=email).exists():
+                raise forms.ValidationError("Este e-mail já está registado.")
+        return email
+
     def clean_matricula(self):
         mat = self.cleaned_data.get('matricula')
         mat = (mat or '').strip()
         try:
-            if User.objects.filter(username=mat).exists():
+            if User.objects.filter(username__iexact=mat).exists():
                 raise forms.ValidationError("Esta matrícula já está registada.")
-            if Perfil.objects.filter(matricula=mat).exists():
+            if Perfil.objects.filter(matricula__iexact=mat).exists():
                 raise forms.ValidationError("Esta matrícula já está registada.")
         except OperationalError:
             raise forms.ValidationError("Banco de dados não inicializado. Execute as migrações (manage.py migrate).")
@@ -72,87 +89,117 @@ class RegisterForm(forms.ModelForm):
     
 
 class SubAdminForm(forms.Form):
-    nome = forms.CharField(label='Nome completo', max_length=150)
     email = forms.EmailField(label='E-mail')
-    matricula = forms.CharField(label='Matrícula', max_length=20)
-    senha = forms.CharField(label='Senha', widget=forms.PasswordInput, required=False)
-    escopo_agendamento = forms.BooleanField(label='Agendamentos', required=False)
-    escopo_equipamento = forms.BooleanField(label='Equipamentos', required=False)
-    escopo_livro = forms.BooleanField(label='Livros', required=False)
-    escopo_emprestimo = forms.BooleanField(label='Empréstimos', required=False)
 
     def __init__(self, *args, instance=None, **kwargs):
         super().__init__(*args, **kwargs)
         self._instance = instance
-        if instance:
-            self.fields['nome'].initial = instance.user.get_full_name()
-            self.fields['email'].initial = instance.user.email
-            self.fields['matricula'].initial = instance.matricula
-            escopos_ativos = set(instance.permissoes.values_list('escopo', flat=True))
-            from .models import PermissaoSubAdmin as PAD
-            self.fields['escopo_equipamento'].initial = PAD.ESCOPO_EQUIPAMENTO in escopos_ativos
-            self.fields['escopo_livro'].initial = PAD.ESCOPO_LIVRO in escopos_ativos
-            self.fields['escopo_agendamento'].initial = PAD.ESCOPO_AGENDAMENTO in escopos_ativos
-            self.fields['escopo_emprestimo'].initial = PAD.ESCOPO_EMPRESTIMO in escopos_ativos
+        self.setores_list = Setor.objects.all().order_by('nome')
 
-    def clean_senha(self):
-        senha = self.cleaned_data.get('senha')
-        if senha:
-            validate_password(senha)
-        elif not self._instance:
-            raise forms.ValidationError('Senha obrigatória para novos SubAdmins.')
-        return senha
+        # Adiciona campos dinâmicos para cada setor
+        for setor in self.setores_list:
+            field_name_itens = f'pode_itens_{setor.id}'
+            field_name_emprestimos = f'pode_emprestimos_{setor.id}'
+
+            self.fields[field_name_itens] = forms.BooleanField(required=False, label="Itens")
+            self.fields[field_name_emprestimos] = forms.BooleanField(required=False, label="Empréstimos")
+
+            if instance:
+                self.fields['email'].initial = instance.user.email
+                from .models import JurisdicaoSubAdmin
+                jur = JurisdicaoSubAdmin.objects.filter(subadmin=instance, setor=setor).first()
+                if jur:
+                    self.fields[field_name_itens].initial = jur.pode_gerenciar_itens
+                    self.fields[field_name_emprestimos].initial = jur.pode_gerenciar_emprestimos
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if email:
+            email = email.lower()
+            # Verifica se já existe um usuário com esse email que JÁ SEJA subadmin
+            user_existente = User.objects.filter(email__iexact=email).first()
+            if user_existente:
+                perfil = getattr(user_existente, 'perfil', None)
+                if perfil and perfil.eh_subadm:
+                    if not self._instance or self._instance.user.pk != user_existente.pk:
+                        raise forms.ValidationError("Este e-mail já pertence a um Sub-Administrador.")
+        return email
 
     def save(self):
         from django.db import transaction
         from django.contrib.auth.models import User as AuthUser
-        from .models import Perfil as PerfilModel, PermissaoSubAdmin as PAD
-        nome = self.cleaned_data['nome']
+        from .models import Perfil as PerfilModel, JurisdicaoSubAdmin
+        import secrets
+        import string
+
         email = self.cleaned_data['email']
-        matricula = self.cleaned_data['matricula']
-        senha = self.cleaned_data.get('senha')
-        partes = nome.strip().split(' ', 1)
-        first_name = partes[0]
-        last_name = partes[1] if len(partes) > 1 else ''
+        criado = False
 
         with transaction.atomic():
+            user = AuthUser.objects.filter(email__iexact=email).first()
+
             if self._instance:
                 user = self._instance.user
-                user.first_name = first_name
-                user.last_name = last_name
                 user.email = email
-                if senha:
-                    user.set_password(senha)
+                user.username = email
                 user.save()
                 perfil = self._instance
-                perfil.matricula = matricula
-                perfil.save()
-                perfil.permissoes.all().delete()
-            else:
-                user = AuthUser.objects.create_user(
-                    username=matricula,
-                    email=email,
-                    password=senha,
-                    first_name=first_name,
-                    last_name=last_name,
-                    is_active=True,
-                )
+                perfil.jurisdicoes.all().delete()
+                criado = False
+            elif user:
                 perfil = user.perfil
                 perfil.tipo = 'SUBADM'
                 perfil.status = PerfilModel.STATUS_APROVADO
-                perfil.matricula = matricula
                 perfil.save()
+                perfil.jurisdicoes.all().delete()
+                criado = False
+            else:
+                random_password = ''.join(secrets.choice(string.ascii_letters + string.digits) for i in range(20))
+                user = AuthUser.objects.create_user(
+                    username=email,
+                    email=email,
+                    password=random_password,
+                    is_active=False,
+                )
+                perfil = user.perfil
+                perfil.tipo = 'SUBADM'
+                perfil.status = PerfilModel.STATUS_PENDENTE
+                perfil.save()
+                criado = True
 
-            mapa = {
-                'escopo_equipamento': PAD.ESCOPO_EQUIPAMENTO,
-                'escopo_livro': PAD.ESCOPO_LIVRO,
-                'escopo_agendamento': PAD.ESCOPO_AGENDAMENTO,
-                'escopo_emprestimo': PAD.ESCOPO_EMPRESTIMO,
-            }
-            for campo, escopo in mapa.items():
-                if self.cleaned_data.get(campo):
-                    PAD.objects.get_or_create(subadmin=perfil, escopo=escopo)
-        return perfil
+            for setor in Setor.objects.all():
+                pode_itens = self.cleaned_data.get(f'pode_itens_{setor.id}')
+                pode_emp = self.cleaned_data.get(f'pode_emprestimos_{setor.id}')
+
+                if pode_itens or pode_emp:
+                    JurisdicaoSubAdmin.objects.create(
+                        subadmin=perfil,
+                        setor=setor,
+                        pode_gerenciar_itens=bool(pode_itens),
+                        pode_gerenciar_emprestimos=bool(pode_emp)
+                    )
+        return perfil, criado
+
+
+class CompleteSubAdminProfileForm(forms.Form):
+    nome_completo = forms.CharField(label="Nome Completo", max_length=150)
+    telefone = forms.CharField(label="Telefone", max_length=15)
+    senha = forms.CharField(label="Nova Senha", widget=forms.PasswordInput)
+    confirmar_senha = forms.CharField(label="Confirmar Senha", widget=forms.PasswordInput)
+
+    def clean_senha(self):
+        senha = self.cleaned_data.get("senha")
+        if senha:
+            validate_password(senha)
+        return senha
+
+    def clean(self):
+        cleaned_data = super().clean()
+        senha = cleaned_data.get("senha")
+        confirmar_senha = cleaned_data.get("confirmar_senha")
+        if senha and confirmar_senha and senha != confirmar_senha:
+            raise forms.ValidationError("As senhas não coincidem.")
+        return cleaned_data
 
 
 class LoginForm(AuthenticationForm):
@@ -194,7 +241,13 @@ class LoginForm(AuthenticationForm):
 
         if username and password:
             try:
-                user = User.objects.filter(username=username).first()
+                from django.db.models import Q
+                user = User.objects.filter(Q(username__iexact=username) | Q(email__iexact=username))
+                if user.count() > 1:
+                    user = user.filter(is_active=True).first() or user.first()
+                else:
+                    user = user.first()
+
                 if user and user.check_password(password) and not user.is_active:
                     status = getattr(user.perfil, 'status', Perfil.STATUS_PENDENTE)
                     if status == Perfil.STATUS_PENDENTE:

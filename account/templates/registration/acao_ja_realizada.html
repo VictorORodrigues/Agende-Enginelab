@@ -4,8 +4,12 @@
 <div class="auth-wrap" style="padding-top:60px;padding-bottom:60px">
   <div class="auth-card" style="max-width:460px;text-align:center">
     <div class="auth-logo">L</div>
-    <div class="auth-title">Link inválido ou já utilizado</div>
-    {% if perfil %}
+    <div class="auth-title">Ação já realizada</div>
+    {% if mensagem_personalizada %}
+      <div class="auth-sub" style="margin-bottom:20px">
+        {{ mensagem_personalizada }}
+      </div>
+    {% elif perfil %}
       <div class="auth-sub" style="margin-bottom:20px">
         Este link já foi processado. Status atual da conta de
         <strong>{{ perfil.user.get_full_name }}</strong>:
@@ -13,7 +17,7 @@
       </div>
     {% else %}
       <div class="auth-sub" style="margin-bottom:20px">
-        Este link não é válido ou já foi utilizado anteriormente.
+        Este link não é mais válido ou já foi utilizado anteriormente.
       </div>
     {% endif %}
   </div>

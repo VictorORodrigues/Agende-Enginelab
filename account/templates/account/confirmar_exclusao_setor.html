@@ -1,0 +1,17 @@
+{% extends "account/base_dash.html" %}
+{% block content %}
+<div class="modal-overlay open">
+  <div class="modal">
+    <div class="modal-title">Confirmar exclusão</div>
+    <div class="modal-sub">Tem certeza que deseja excluir o setor <strong>{{ setor.nome }}</strong>? Esta ação não pode ser desfeita.</div>
+
+    <div class="modal-actions">
+      <a href="{% url 'admin_setores' %}" class="btn">Cancelar</a>
+      <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Excluir permanentemente</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

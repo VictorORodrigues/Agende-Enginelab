@@ -5,16 +5,24 @@
   <div class="auth-card" style="max-width:460px;text-align:center">
     <div class="auth-logo">L</div>
     {% if acao == 'aprovado' %}
-      <div class="auth-title">Cadastro aprovado</div>
+      <div class="auth-title">Ação realizada com sucesso</div>
       <div class="auth-sub" style="margin-bottom:20px">
-        O usuário <strong>{{ perfil.user.get_full_name }}</strong> foi aprovado e já pode acessar o sistema.
-        Um e-mail de confirmação foi enviado para {{ perfil.user.email }}.
+        {% if mensagem_personalizada %}
+          {{ mensagem_personalizada }}
+        {% else %}
+          O usuário <strong>{{ perfil.user.get_full_name }}</strong> foi aprovado e já pode acessar o sistema.
+          Um e-mail de confirmação foi enviado para {{ perfil.user.email }}.
+        {% endif %}
       </div>
     {% else %}
-      <div class="auth-title">Cadastro recusado</div>
+      <div class="auth-title">Solicitação recusada</div>
       <div class="auth-sub" style="margin-bottom:20px">
-        O cadastro de <strong>{{ perfil.user.get_full_name }}</strong> foi recusado.
-        O usuário foi notificado por e-mail.
+        {% if mensagem_personalizada %}
+          {{ mensagem_personalizada }}
+        {% else %}
+          O cadastro de <strong>{{ perfil.user.get_full_name }}</strong> foi recusado.
+          O usuário foi notificado por e-mail.
+        {% endif %}
       </div>
     {% endif %}
     <div class="auth-footer">

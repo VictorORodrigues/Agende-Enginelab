@@ -1,0 +1,150 @@
+{% extends "account/base_dash.html" %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">{{ setor.nome }}</div>
+    <div class="page-subtitle">{{ setor.descricao|default:"Consulte e solicite os itens disponíveis neste setor" }}</div>
+  </div>
+</div>
+
+<!-- Filtros e Busca -->
+<div class="card" style="margin-bottom: 24px; padding: 16px">
+  <form method="get" id="searchForm" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap">
+    <div style="flex:1; min-width:250px; position:relative">
+      <svg style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text3)" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="text" name="q" id="searchInput" class="form-input" style="padding-left:36px" placeholder="Pesquisar por nome ou ID..." value="{{ search_query|default:'' }}" autocomplete="off">
+    </div>
+
+    <select name="categoria" id="categoryFilter" class="form-input" style="width:200px">
+      <option value="">Todas as categorias</option>
+      {% for cat in categorias_do_setor %}
+      <option value="{{ cat.pk }}" {% if categoria_selecionada == cat.pk|stringformat:"s" %}selected{% endif %}>{{ cat.nome }}</option>
+      {% endfor %}
+    </select>
+
+    <select name="status" id="statusFilter" class="form-input" style="width:180px">
+      <option value="">Todos os status</option>
+      {% for valor, rotulo in status_choices %}
+      <option value="{{ valor }}" {% if status_selecionado == valor %}selected{% endif %}>{{ rotulo }}</option>
+      {% endfor %}
+    </select>
+  </form>
+</div>
+
+<div id="resultsContainer">
+  <div class="card" style="padding:0;overflow:hidden">
+    {% if itens %}
+    <table>
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Identificador</th>
+          <th>Categoria</th>
+          <th>Status</th>
+          <th style="text-align:right; padding-right:20px">Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in itens %}
+        <tr>
+          <td>
+            <div style="display:flex; align-items:center; gap:10px">
+              <div style="width:32px; height:32px; border-radius:6px; background:var(--surface2); display:flex; align-items:center; justify-content:center; color:var(--text2)">
+                {% if item.tipo == 'item' %}
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect width="18" height="12" x="3" y="9" rx="2"/><path d="M9 9V6a3 3 0 0 1 6 0v3"/></svg>
+                {% else %}
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                {% endif %}
+              </div>
+              <div>
+                <div style="font-weight:500">{{ item.nome }}</div>
+                <div style="font-size:11px; color:var(--text3); text-transform:uppercase">{{ item.tipo }}</div>
+              </div>
+            </div>
+          </td>
+          <td><code style="background:var(--surface2); padding:2px 6px; border-radius:4px; font-size:12px">{{ item.id }}</code></td>
+          <td><span class="badge badge-gray" style="background:#f0f1f4">{{ item.cat }}</span></td>
+          <td>
+            {% if item.status == 'disponivel' %}
+            <span class="badge badge-green">Disponível</span>
+            {% else %}
+            <span class="badge badge-amber">Emprestado</span>
+            {% endif %}
+          </td>
+          <td style="text-align:right; padding-right:20px">
+              {% if eh_aluno %}
+                  {% if item.status == 'disponivel' %}
+                    {% if item.tipo == 'item' %}
+                      <a class="btn btn-sm btn-primary" href="{% url 'solicitar_emprestimo' item.obj.pk %}">Solicitar</a>
+                    {% else %}
+                      <a class="btn btn-sm btn-primary" href="{% url 'solicitar_livro' item.obj.pk %}">Solicitar</a>
+                    {% endif %}
+                  {% elif item.obj.pk in meus_emprestimos_ids %}
+                    <span class="badge badge-gray">Com você</span>
+                  {% else %}
+                    {# Item emprestado para outro - Oferece Agendamento #}
+                    {% if item.tipo == 'item' %}
+                      <a class="btn btn-sm btn-primary" href="{% url 'appointment:solicitar_agendamento' %}?equipamento={{ item.obj.pk }}">Agendar</a>
+                    {% else %}
+                      <a class="btn btn-sm btn-primary" href="{% url 'appointment:solicitar_agendamento' %}?livro={{ item.obj.pk }}">Agendar</a>
+                    {% endif %}
+                  {% endif %}
+              {% else %}
+                  {# Admin / Sub-Admin #}
+                  {% if item.status == 'disponivel' %}
+                    <a class="btn btn-sm btn-primary" href="{% url 'emprestimo_direto' item.tipo item.obj.pk %}">Emprestar</a>
+                  {% else %}
+                    <span class="badge badge-amber">Emprestado</span>
+                  {% endif %}
+              {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty" style="padding:60px 24px">
+      <div class="empty-icon">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      </div>
+      <div class="empty-title">Nenhum item encontrado</div>
+      <p style="font-size:13px; color:var(--text3)">Tente ajustar sua pesquisa ou procure em outro setor.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+  (function() {
+    const searchInput = document.getElementById('searchInput');
+    const categoryFilter = document.getElementById('categoryFilter');
+    const statusFilter = document.getElementById('statusFilter');
+    const resultsContainer = document.getElementById('resultsContainer');
+    let timeout = null;
+
+    function updateResults() {
+      const q = searchInput.value;
+      const cat = categoryFilter.value;
+      const status = statusFilter.value;
+      const url = `${window.location.pathname}?q=${q}&categoria=${cat}&status=${status}`;
+
+      window.history.pushState({}, '', url);
+      fetch(url)
+        .then(response => response.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, 'text/html');
+          resultsContainer.innerHTML = doc.getElementById('resultsContainer').innerHTML;
+        });
+    }
+
+    searchInput.addEventListener('input', () => {
+      clearTimeout(timeout);
+      timeout = setTimeout(updateResults, 300);
+    });
+
+    categoryFilter.addEventListener('change', updateResults);
+    statusFilter.addEventListener('change', updateResults);
+  })();
+</script>
+{% endblock %}

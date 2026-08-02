@@ -4,16 +4,38 @@
   <div><div class="page-title">Empréstimos</div></div>
 </div>
 
-<form method="get" style="margin-bottom:16px">
-  <select name="status" class="form-input" style="width:200px" onchange="this.form.submit()">
+<form method="get" id="searchForm" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center">
+  <input type="text" name="q" id="searchInput" class="form-input" style="width:250px" placeholder="Solicitante ou item..." value="{{ search_query|default:'' }}" autocomplete="off">
+
+  <select name="setor" class="form-input filter-select" style="width:180px">
+    <option value="">Todos os setores</option>
+    {% for setor in setores %}
+    <option value="{{ setor.pk }}" {% if setor_selecionado == setor.pk|stringformat:"s" %}selected{% endif %}>{{ setor.nome }}</option>
+    {% endfor %}
+  </select>
+
+  <select name="status" class="form-input filter-select" style="width:160px">
     <option value="">Todos os status</option>
     {% for valor, rotulo in status_choices %}
     <option value="{{ valor }}" {% if status_selecionado == valor %}selected{% endif %}>{{ rotulo }}</option>
     {% endfor %}
   </select>
+
+  <div style="display:flex;align-items:center;gap:4px">
+    <span style="font-size:12px;color:var(--text3)">De:</span>
+    <input type="date" name="data_de" class="form-input filter-select" style="width:135px" value="{{ data_de }}">
+  </div>
+  <div style="display:flex;align-items:center;gap:4px">
+    <span style="font-size:12px;color:var(--text3)">Até:</span>
+    <input type="date" name="data_ate" class="form-input filter-select" style="width:135px" value="{{ data_ate }}">
+  </div>
+
+  {% if search_query or status_selecionado or setor_selecionado or data_de or data_ate %}
+    <a href="{% url 'admin_emprestimos' %}" class="btn">Limpar</a>
+  {% endif %}
 </form>
 
-<div class="card" style="padding:0;overflow:hidden">
+<div class="card" id="resultsContainer" style="padding:0;overflow:hidden">
   {% if emprestimos %}
   <table>
     <thead>
@@ -35,11 +57,11 @@
         <td>{{ emprestimo.data_final|date:"d/m/Y" }}</td>
         <td>
           {% if emprestimo.status == 'ativo' %}
-          <span class="badge badge-blue">Ativo</span>
+          <span class="badge badge-blue">Emprestado</span>
           {% elif emprestimo.status == 'pendente' %}
           <span class="badge badge-amber">Pendente</span>
           {% elif emprestimo.status == 'finalizado' %}
-          <span class="badge badge-gray">Finalizado</span>
+          <span class="badge badge-gray">Devolvido</span>
           {% else %}
           <span class="badge badge-red">Rejeitado</span>
           {% endif %}
@@ -50,14 +72,17 @@
             {% csrf_token %}
             <button type="submit" class="btn btn-sm btn-success">Aprovar</button>
           </form>
-          <form method="post" action="{% url 'reprovar_emprestimo' emprestimo.pk %}" onsubmit="return confirm('Reprovar este empréstimo?');">
+          <form method="post" action="{% url 'reprovar_emprestimo' emprestimo.pk %}">
             {% csrf_token %}
-            <button type="submit" class="btn btn-sm btn-danger">Reprovar</button>
+            <button type="submit" class="btn btn-sm btn-danger"
+                    onclick="confirmarAcao(event, 'Reprovar Empréstimo', 'Deseja realmente reprovar esta solicitação de empréstimo?')">
+              Reprovar
+            </button>
           </form>
           {% elif emprestimo.status == 'ativo' %}
           <form method="post" action="{% url 'finalizar_emprestimo' emprestimo.pk %}">
             {% csrf_token %}
-            <button type="submit" class="btn btn-sm btn-primary">Finalizar</button>
+            <button type="submit" class="btn btn-sm btn-primary">Receber</button>
           </form>
           {% endif %}
         </td>
@@ -67,9 +92,63 @@
   </table>
   {% else %}
   <div class="empty">
-    <div class="empty-icon">📦</div>
+    <div class="empty-icon">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 9.4 7.5 4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" y1="22" x2="12" y2="12"/></svg>
+    </div>
     <div class="empty-title">Nenhum empréstimo encontrado.</div>
   </div>
   {% endif %}
 </div>
+
+<script>
+  (function() {
+    const searchForm = document.getElementById('searchForm');
+    const resultsContainer = document.getElementById('resultsContainer');
+    const searchInput = document.getElementById('searchInput');
+
+    let timeout = null;
+
+    function updateResults() {
+      if (resultsContainer) resultsContainer.style.opacity = '0.5';
+
+      const formData = new FormData(searchForm);
+      const params = new URLSearchParams(formData).toString();
+      const url = `${window.location.pathname}?${params}`;
+
+      window.history.pushState({}, '', url);
+
+      fetch(url)
+        .then(response => response.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, 'text/html');
+
+          if (resultsContainer) {
+            const newContent = doc.getElementById('resultsContainer');
+            if (newContent) resultsContainer.innerHTML = newContent.innerHTML;
+            resultsContainer.style.opacity = '1';
+          }
+        })
+        .catch(err => {
+          console.error('Erro na pesquisa:', err);
+          if (resultsContainer) resultsContainer.style.opacity = '1';
+        });
+    }
+
+    if (searchInput) {
+      searchInput.addEventListener('input', () => {
+        clearTimeout(timeout);
+        timeout = setTimeout(updateResults, 300);
+      });
+    }
+
+    document.querySelectorAll('.filter-select').forEach(el => {
+      el.addEventListener('change', updateResults);
+    });
+
+    if (searchForm) {
+      searchForm.addEventListener('submit', (e) => e.preventDefault());
+    }
+  })();
+</script>
 {% endblock %}

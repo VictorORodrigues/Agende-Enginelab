@@ -17,7 +17,7 @@
       {% csrf_token %}
 
       <div class="form-group">
-        <label class="form-label" for="{{ form.username.id_for_label }}">Matrícula</label>
+        <label class="form-label" for="{{ form.username.id_for_label }}">Matrícula ou E-mail</label>
         <input class="form-input" type="text"
                id="{{ form.username.id_for_label }}"
                name="{{ form.username.html_name }}"
@@ -30,10 +30,15 @@
 
       <div class="form-group">
         <label class="form-label" for="{{ form.password.id_for_label }}">Senha</label>
-        <input class="form-input" type="password"
-               id="{{ form.password.id_for_label }}"
-               name="{{ form.password.html_name }}"
-               autocomplete="current-password">
+        <div class="password-wrapper">
+          <input class="form-input" type="password"
+                 id="{{ form.password.id_for_label }}"
+                 name="{{ form.password.html_name }}"
+                 autocomplete="current-password">
+          <span class="password-toggle" onclick="togglePassword('{{ form.password.id_for_label }}', this)">
+            <i class="bi bi-eye"></i>
+          </span>
+        </div>
         {% for error in form.password.errors %}
         <div class="alert alert-error" style="margin-top:4px;padding:4px 8px">{{ error }}</div>
         {% endfor %}
