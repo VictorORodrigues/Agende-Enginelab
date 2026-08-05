@@ -45,6 +45,8 @@ DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default=f'EngineLab UFC <{EMAI
 EMAIL_SUBJECT_PREFIX = '[EngineLab] '
 
 INSTALLED_APPS = [
+    'account',
+    'catalog',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -52,9 +54,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'widget_tweaks',
-    'account',
-    'catalog',
-    'appointment',
 ]
 
 MIDDLEWARE = [
@@ -71,7 +70,7 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'agende_enginelab.urls'
 
 LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = 'admin_equipamentos'
+LOGIN_REDIRECT_URL = 'meus_emprestimos'
 LOGOUT_REDIRECT_URL = 'login'
 
 ACCOUNT_MAX_FAILED_LOGINS_PER_MINUTE = config('ACCOUNT_MAX_FAILED_LOGINS_PER_MINUTE', default=5, cast=int)

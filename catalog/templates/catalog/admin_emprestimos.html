@@ -52,7 +52,7 @@
       {% for emprestimo in emprestimos %}
       <tr>
         <td>{{ emprestimo.usuario.get_full_name|default:emprestimo.usuario.username }}</td>
-        <td>{{ emprestimo.item }}</td>
+        <td>{{ emprestimo.item_display }}</td>
         <td>{{ emprestimo.data_inicio|date:"d/m/Y" }}</td>
         <td>{{ emprestimo.data_final|date:"d/m/Y" }}</td>
         <td>

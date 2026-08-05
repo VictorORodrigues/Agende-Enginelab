@@ -1,45 +1,21 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Aviso de Atraso</title>
-</head>
-<body style="margin:0;padding:0;background:#f4f7f6;font-family:Arial,sans-serif;">
-  <table align="center" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;background:#ffffff;margin-top:20px;border-radius:8px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.08);border:1px solid #e5e7eb;">
-    <tr>
-      <td style="padding:32px 24px;background:#dc3545;color:#ffffff;text-align:center;">
-        <h1 style="margin:0;font-size:24px;font-weight:600;">EngineLab UFC</h1>
-      </td>
-    </tr>
-    <tr>
-      <td style="padding:40px 32px;">
-        <h2 style="margin-top:0;color:#dc3545;font-size:20px;font-weight:600;text-align:center;">Item em Atraso</h2>
-        <p style="color:#1f2328;font-size:15px;line-height:1.5;text-align:center;">
-          Olá, <strong>{{ emprestimo.usuario.first_name }}</strong>. Verificamos que o seguinte item está com a devolução <strong>atrasada</strong>:
-        </p>
+{% extends "emails/base_email.html" %}
+{% block titulo %}Item em atraso{% endblock %}
+{% block conteudo %}
+<h1 style="margin:0 0 12px 0;color:#ad1925;font-size:20px;font-weight:600;text-align:center;">Item em Atraso</h1>
+<p style="color:#1f2328;font-size:15px;line-height:1.5;text-align:center;">
+  Olá, <strong>{{ emprestimo.usuario.first_name }}</strong>. Verificamos que o seguinte item está com a devolução <strong>atrasada</strong>:
+</p>
 
-        <div style="background-color:#fff5f5;border:1px solid #feb2b2;border-radius:12px;padding:24px;margin-bottom:32px;text-align:center;">
-          <p style="margin:0;color:#c53030;font-size:18px;font-weight:600;">{{ emprestimo.item }}</p>
-          <p style="margin:8px 0 0 0;color:#718096;font-size:14px;">Data prevista: {{ emprestimo.data_final|date:"d/m/Y" }}</p>
-        </div>
+<div style="background-color:#f6e8e9;border:1px solid #f0d5d7;border-radius:12px;padding:24px;margin:24px 0;text-align:center;">
+  <p style="margin:0;color:#ad1925;font-size:18px;font-weight:600;">{{ emprestimo.item_display }}</p>
+  <p style="margin:8px 0 0 0;color:#6b7280;font-size:14px;">Data prevista: {{ emprestimo.data_final|date:"d/m/Y" }}</p>
+</div>
 
-        <p style="color:#6b7280;font-size:15px;line-height:1.5;text-align:center;margin-bottom:32px;">
-          Por favor, solicitamos que realize a entrega do item o mais breve possível no laboratório para evitar sanções e permitir que outros alunos possam utilizá-lo.
-        </p>
+<p style="color:#6b7280;font-size:15px;line-height:1.5;text-align:center;margin-bottom:24px;">
+  Por favor, solicitamos que realize a entrega do item o mais breve possível no laboratório para evitar sanções e permitir que outros alunos possam utilizá-lo.
+</p>
 
-        <div style="text-align:center;margin-bottom:32px;">
-            <p style="font-size: 13px; color: #4a5568;">
-                Caso você já tenha devolvido, por favor ignore este e-mail enquanto atualizamos nosso sistema.
-            </p>
-        </div>
-      </td>
-    </tr>
-    <tr>
-      <td style="padding:24px;background-color:#f9fafb;border-top:1px solid #e5e7eb;text-align:center;">
-        <p style="margin:0;color:#9aa1ac;font-size:12px;">&copy; 2024 EngineLab UFC. Notificação Automática.</p>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>
+<p style="text-align:center;font-size:13px;color:#9aa1ac;">
+  Caso você já tenha devolvido, por favor ignore este e-mail enquanto atualizamos nosso sistema.
+</p>
+{% endblock %}

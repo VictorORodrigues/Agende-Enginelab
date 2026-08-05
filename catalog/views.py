@@ -2,8 +2,9 @@ import secrets
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
-from django.db.models import ProtectedError, Count, Q
+from django.db.models import ProtectedError, Count, Q, Exists, OuterRef
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -15,6 +16,23 @@ from account.models import Setor
 
 from .forms import CategoriaForm, EquipamentoForm, LivroForm
 from .models import Categoria, Emprestimo, Equipamento, Livro
+
+
+def _filtrar_por_status(qs, status, campo_fk):
+    """Filtra um queryset de Equipamento/Livro por disponibilidade real na data de hoje,
+    já que a disponibilidade depende dos empréstimos ativos, não de um campo fixo."""
+    if not status:
+        return qs
+    emprestimo_ativo_hoje = Emprestimo.objects.filter(
+        **{campo_fk: OuterRef('pk')},
+        status=Emprestimo.STATUS_ATIVO,
+        data_inicio__lte=date.today(),
+        data_final__gte=date.today(),
+    )
+    qs = qs.annotate(_emprestado_hoje=Exists(emprestimo_ativo_hoje))
+    if status == Equipamento.STATUS_EMPRESTADO:
+        return qs.filter(_emprestado_hoje=True)
+    return qs.filter(_emprestado_hoje=False)
 
 
 # ===============================
@@ -103,8 +121,7 @@ def equipamentos(request):
 
     if categoria_id:
         qs = qs.filter(categoria_id=categoria_id)
-    if status:
-        qs = qs.filter(status=status)
+    qs = _filtrar_por_status(qs, status, 'equipamento')
     if search_query:
         qs = qs.filter(
             Q(nome__icontains=search_query) |
@@ -149,8 +166,7 @@ def admin_equipamentos(request):
 
     if categoria_id:
         qs = qs.filter(categoria_id=categoria_id)
-    if status:
-        qs = qs.filter(status=status)
+    qs = _filtrar_por_status(qs, status, 'equipamento')
     if setor_id:
         qs = qs.filter(setor_id=setor_id)
     if search_query:
@@ -225,7 +241,10 @@ def equipamento_criar(request):
     return render(request, 'catalog/equipamento_form.html', {
         'form': form,
         'modo': 'criar',
-        'tem_categorias': tem_categorias
+        'tem_categorias': tem_categorias,
+        'categorias_setor_map': dict(
+            Categoria.objects.filter(setor__in=setores_permitidos).values_list('id', 'setor_id')
+        ),
     })
 
 
@@ -264,7 +283,10 @@ def equipamento_editar(request, pk):
         'form': form,
         'modo': 'editar',
         'equipamento': equipamento,
-        'tem_categorias': tem_categorias
+        'tem_categorias': tem_categorias,
+        'categorias_setor_map': dict(
+            Categoria.objects.filter(setor__in=setores_permitidos).values_list('id', 'setor_id')
+        ),
     })
 
 
@@ -275,6 +297,10 @@ def equipamento_excluir(request, pk):
 
     if not perfil.gerencia_setor(equipamento.setor, 'item'):
         messages.error(request, "Você não tem permissão para excluir itens deste setor.")
+        return redirect('admin_equipamentos')
+
+    if equipamento.tem_emprestimo_ativo_ou_pendente():
+        messages.error(request, "Não é possível excluir: este item tem um empréstimo ativo ou pendente.")
         return redirect('admin_equipamentos')
 
     if request.method == 'POST':
@@ -381,13 +407,12 @@ def categoria_excluir(request, pk):
 # ===============================
 @login_required
 def livros(request):
-    qs = Livro.objects.select_related('categoria', 'setor').annotate(total_fila=Count('fila_espera')).all()
+    qs = Livro.objects.select_related('categoria', 'setor').all()
     categoria_id = request.GET.get('categoria')
     status = request.GET.get('status')
     if categoria_id:
         qs = qs.filter(categoria_id=categoria_id)
-    if status:
-        qs = qs.filter(status=status)
+    qs = _filtrar_por_status(qs, status, 'livro')
 
     context = {
         'livros': qs,
@@ -426,7 +451,10 @@ def livro_criar(request):
     return render(request, 'catalog/livro_form.html', {
         'form': form,
         'modo': 'criar',
-        'tem_categorias': tem_categorias
+        'tem_categorias': tem_categorias,
+        'categorias_setor_map': dict(
+            Categoria.objects.filter(setor__in=setores_permitidos).values_list('id', 'setor_id')
+        ),
     })
 
 
@@ -463,13 +491,21 @@ def livro_editar(request, pk):
         'form': form,
         'modo': 'editar',
         'livro': livro,
-        'tem_categorias': tem_categorias
+        'tem_categorias': tem_categorias,
+        'categorias_setor_map': dict(
+            Categoria.objects.filter(setor__in=setores_permitidos).values_list('id', 'setor_id')
+        ),
     })
 
 
 @requer_admin
 def livro_excluir(request, pk):
     livro = get_object_or_404(Livro, pk=pk)
+
+    if livro.tem_emprestimo_ativo_ou_pendente():
+        messages.error(request, "Não é possível excluir: este livro tem um empréstimo ativo ou pendente.")
+        return redirect('livros')
+
     if request.method == 'POST':
         livro.delete()
         messages.success(request, 'Livro excluído.')
@@ -506,6 +542,39 @@ def _notificar_admin_novo_emprestimo(request, emprestimo):
     )
 
 
+def _parse_bool(valor):
+    return valor in ('on', 'true', 'True', '1')
+
+
+def _horarios_se_sobrepoem(a_inicio, a_fim, b_inicio, b_fim):
+    if not (a_inicio and a_fim and b_inicio and b_fim):
+        return True  # se algum lado não tem horário (dia inteiro), considera conflito
+    return a_inicio < b_fim and b_inicio < a_fim
+
+
+def _verificar_conflito_item(item_filtro, usuario_excluir, data_inicio, data_final, dia_inteiro, hora_inicio, hora_fim):
+    """Verifica se já existe empréstimo pendente/ativo do mesmo item cujo período colide."""
+    conflitos = Emprestimo.objects.filter(
+        status__in=[Emprestimo.STATUS_PENDENTE, Emprestimo.STATUS_ATIVO],
+        **item_filtro,
+    ).exclude(usuario=usuario_excluir)
+
+    for existente in conflitos.filter(
+        data_inicio__lte=data_final,
+        data_final__gte=data_inicio,
+    ):
+        # Datas se sobrepõem. Se o período de sobreposição é só um único dia e
+        # ambos os pedidos têm horário definido, ainda pode não haver conflito real.
+        mesmo_dia_unico = (
+            data_inicio == data_final == existente.data_inicio == existente.data_final
+        )
+        if mesmo_dia_unico and not dia_inteiro and not existente.dia_inteiro:
+            if not _horarios_se_sobrepoem(hora_inicio, hora_fim, existente.hora_inicio, existente.hora_fim):
+                continue
+        return existente
+    return None
+
+
 @login_required
 def solicitar_emprestimo(request, eq_id):
     if not request.user.perfil.eh_aluno:
@@ -519,14 +588,33 @@ def solicitar_emprestimo(request, eq_id):
             messages.warning(request, 'Você já possui uma solicitação pendente para este item.')
             return redirect(reverse('meus_emprestimos'))
 
+        dia_inteiro = _parse_bool(request.POST.get('dia_inteiro'))
+        data_inicio = request.POST.get('data_inicio')
+        data_final = request.POST.get('data_final')
+        hora_inicio = request.POST.get('hora_inicio') or None
+        hora_fim = request.POST.get('hora_fim') or None
+
         try:
             with transaction.atomic():
                 emprestimo = Emprestimo(
                     usuario=request.user,
                     equipamento=equipamento,
-                    data_final=request.POST.get('data_final'),
+                    data_inicio=data_inicio,
+                    data_final=data_final,
+                    dia_inteiro=dia_inteiro,
+                    hora_inicio=None if dia_inteiro else hora_inicio,
+                    hora_fim=None if dia_inteiro else hora_fim,
                 )
                 emprestimo.full_clean()
+
+                conflito = _verificar_conflito_item(
+                    {'equipamento': equipamento}, request.user,
+                    emprestimo.data_inicio, emprestimo.data_final,
+                    emprestimo.dia_inteiro, emprestimo.hora_inicio, emprestimo.hora_fim,
+                )
+                if conflito:
+                    raise ValidationError('Este item já está reservado em parte do período selecionado.')
+
                 emprestimo.save()
 
             _notificar_admin_novo_emprestimo(request, emprestimo)
@@ -552,14 +640,33 @@ def solicitar_livro(request, livro_id):
             messages.warning(request, 'Você já possui uma solicitação pendente para este livro.')
             return redirect(reverse('meus_emprestimos'))
 
+        dia_inteiro = _parse_bool(request.POST.get('dia_inteiro'))
+        data_inicio = request.POST.get('data_inicio')
+        data_final = request.POST.get('data_final')
+        hora_inicio = request.POST.get('hora_inicio') or None
+        hora_fim = request.POST.get('hora_fim') or None
+
         try:
             with transaction.atomic():
                 emprestimo = Emprestimo(
                     usuario=request.user,
                     livro=livro,
-                    data_final=request.POST.get('data_final'),
+                    data_inicio=data_inicio,
+                    data_final=data_final,
+                    dia_inteiro=dia_inteiro,
+                    hora_inicio=None if dia_inteiro else hora_inicio,
+                    hora_fim=None if dia_inteiro else hora_fim,
                 )
                 emprestimo.full_clean()
+
+                conflito = _verificar_conflito_item(
+                    {'livro': livro}, request.user,
+                    emprestimo.data_inicio, emprestimo.data_final,
+                    emprestimo.dia_inteiro, emprestimo.hora_inicio, emprestimo.hora_fim,
+                )
+                if conflito:
+                    raise ValidationError('Este item já está reservado em parte do período selecionado.')
+
                 emprestimo.save()
 
             _notificar_admin_novo_emprestimo(request, emprestimo)
@@ -695,21 +802,6 @@ def meus_emprestimos(request):
         'hoje': hoje,
     })
 
-    return render(request, 'catalog/meus_emprestimos.html', {
-        'emprestimos': emprestimos_qs,
-        'emprestimos_ativos': emprestimos_ativos,
-        'itens_reserva': itens_reserva,
-        'debitos': debitos,
-        'contadores': contadores,
-        'status_choices': Emprestimo.STATUS_CHOICES,
-        'status_selecionado': status_selecionado,
-        'aba_ativa': aba,
-        'search_query': search_query,
-        'setor_selecionado': setor_selecionado,
-        'setores': Setor.objects.all(),
-        'hoje': hoje,
-    })
-
 
 @login_required
 def renovar_emprestimo(request, pk):
@@ -811,6 +903,10 @@ def aprovar_emprestimo(request, pk):
         messages.info(request, f'Esta solicitação já foi processada (Status: {emprestimo.get_status_display()}).')
         return redirect('admin_emprestimos')
 
+    if not emprestimo.item:
+        messages.error(request, 'O item deste empréstimo não existe mais.')
+        return redirect('admin_emprestimos')
+
     # Segurança: Verifica se o item pertence a um setor onde ele pode gerenciar EMPRÉSTIMOS
     setor_item = emprestimo.item.setor
     if not perfil.gerencia_setor(setor_item, 'emprestimo'):
@@ -821,10 +917,7 @@ def aprovar_emprestimo(request, pk):
         with transaction.atomic():
             emprestimo.status = Emprestimo.STATUS_ATIVO
             emprestimo.save()
-
             item = emprestimo.item
-            item.status = item.STATUS_EMPRESTADO
-            item.save()
 
         html_message = render_to_string('emails/email_emprestimo_aprovado.html', {'emprestimo': emprestimo})
         send_mail(
@@ -850,6 +943,10 @@ def reprovar_emprestimo(request, pk):
         messages.info(request, f'Esta solicitação já foi processada (Status: {emprestimo.get_status_display()}).')
         return redirect('admin_emprestimos')
 
+    if not emprestimo.item:
+        messages.error(request, 'O item deste empréstimo não existe mais.')
+        return redirect('admin_emprestimos')
+
     # Segurança: Verifica se o item pertence a um setor onde ele pode gerenciar EMPRÉSTIMOS
     setor_item = emprestimo.item.setor
     if not perfil.gerencia_setor(setor_item, 'emprestimo'):
@@ -860,7 +957,7 @@ def reprovar_emprestimo(request, pk):
         emprestimo.status = Emprestimo.STATUS_REJEITADO
         emprestimo.save()
 
-        html_message = render_to_string('emails/email_emprestimo_recusado.html', {'emprestimo': emprestimo})
+        html_message = render_to_string('emails/email_emprestimo_recusado.html', {'emprestimo': emprestimo, 'header_cor': '#ad1925'})
         send_mail(
             'Empréstimo não aprovado - EngineLab',
             f'Seu pedido de empréstimo de {emprestimo.item} não foi aprovado.',
@@ -877,6 +974,10 @@ def finalizar_emprestimo(request, pk):
     perfil = request.user.perfil
     emprestimo = get_object_or_404(Emprestimo, pk=pk, status=Emprestimo.STATUS_ATIVO)
 
+    if not emprestimo.item:
+        messages.error(request, 'O item deste empréstimo não existe mais.')
+        return redirect('admin_emprestimos')
+
     # Segurança: Verifica permissão de empréstimo
     setor_item = emprestimo.item.setor
     if not perfil.gerencia_setor(setor_item, 'emprestimo'):
@@ -884,13 +985,10 @@ def finalizar_emprestimo(request, pk):
         return redirect('admin_emprestimos')
 
     if request.method == 'POST':
+        item = emprestimo.item
         emprestimo.status = Emprestimo.STATUS_FINALIZADO
         emprestimo.data_devolucao = date.today()
         emprestimo.save()
-
-        item = emprestimo.item
-        item.status = item.STATUS_DISPONIVEL
-        item.save()
 
         msg = f'Item {item} devolvido com sucesso. O item agora está disponível.'
         messages.success(request, msg)
@@ -908,13 +1006,10 @@ def aprovar_emprestimo_via_token(request, token):
             'mensagem_personalizada': f'Esta solicitação do item "{emprestimo.item}" já foi processada anteriormente. Status atual: {emprestimo.get_status_display()}.'
         })
 
+    item = emprestimo.item
     emprestimo.status = Emprestimo.STATUS_ATIVO
     emprestimo.token_acao = None
     emprestimo.save()
-
-    item = emprestimo.item
-    item.status = item.STATUS_EMPRESTADO
-    item.save()
 
     html_message = render_to_string('emails/email_emprestimo_aprovado.html', {'emprestimo': emprestimo})
     send_mail(
@@ -947,7 +1042,7 @@ def reprovar_emprestimo_via_token(request, token):
     emprestimo.token_acao = None
     emprestimo.save()
 
-    html_message = render_to_string('emails/email_emprestimo_recusado.html', {'emprestimo': emprestimo})
+    html_message = render_to_string('emails/email_emprestimo_recusado.html', {'emprestimo': emprestimo, 'header_cor': '#ad1925'})
     send_mail(
         'Empréstimo não aprovado - EngineLab',
         f'Seu pedido de empréstimo de {emprestimo.item} não foi aprovado.',
@@ -982,7 +1077,7 @@ def emprestimo_direto(request, tipo, pk):
     from .forms import EmprestimoDiretoForm
 
     # Prepara a instância com o item para passar na validação do clean()
-    instancia = Emprestimo()
+    instancia = Emprestimo(data_inicio=date.today())
     if tipo == 'item':
         instancia.equipamento = obj
     else:
@@ -994,9 +1089,6 @@ def emprestimo_direto(request, tipo, pk):
             emprestimo = form.save(commit=False)
             emprestimo.status = Emprestimo.STATUS_ATIVO
             emprestimo.save()
-
-            obj.status = 'emprestado'
-            obj.save()
 
             messages.success(request, f"Empréstimo de {obj} para {emprestimo.usuario.get_full_name() or emprestimo.usuario.username} realizado com sucesso.")
             return redirect('itens_setor', setor_id=obj.setor.pk)

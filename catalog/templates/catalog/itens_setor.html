@@ -73,21 +73,12 @@
           </td>
           <td style="text-align:right; padding-right:20px">
               {% if eh_aluno %}
-                  {% if item.status == 'disponivel' %}
-                    {% if item.tipo == 'item' %}
-                      <a class="btn btn-sm btn-primary" href="{% url 'solicitar_emprestimo' item.obj.pk %}">Solicitar</a>
-                    {% else %}
-                      <a class="btn btn-sm btn-primary" href="{% url 'solicitar_livro' item.obj.pk %}">Solicitar</a>
-                    {% endif %}
-                  {% elif item.obj.pk in meus_emprestimos_ids %}
+                  {% if item.obj.pk in meus_emprestimos_ids %}
                     <span class="badge badge-gray">Com você</span>
+                  {% elif item.tipo == 'item' %}
+                    <a class="btn btn-sm btn-primary" href="{% url 'solicitar_emprestimo' item.obj.pk %}">Solicitar</a>
                   {% else %}
-                    {# Item emprestado para outro - Oferece Agendamento #}
-                    {% if item.tipo == 'item' %}
-                      <a class="btn btn-sm btn-primary" href="{% url 'appointment:solicitar_agendamento' %}?equipamento={{ item.obj.pk }}">Agendar</a>
-                    {% else %}
-                      <a class="btn btn-sm btn-primary" href="{% url 'appointment:solicitar_agendamento' %}?livro={{ item.obj.pk }}">Agendar</a>
-                    {% endif %}
+                    <a class="btn btn-sm btn-primary" href="{% url 'solicitar_livro' item.obj.pk %}">Solicitar</a>
                   {% endif %}
               {% else %}
                   {# Admin / Sub-Admin #}

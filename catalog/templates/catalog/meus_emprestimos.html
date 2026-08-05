@@ -72,7 +72,7 @@
                 </td>
                 {% endif %}
                 <td>
-                    <div style="font-weight: 500">{{ emprestimo.item }}</div>
+                    <div style="font-weight: 500">{{ emprestimo.item_display }}</div>
                     <div style="display: flex; gap: 4px; align-items: center; margin-top: 2px">
                         <span class="badge badge-gray" style="font-size: 10px">{{ emprestimo.item.setor.nome }}</span>
                         <span class="badge badge-blue" style="font-size: 10px">
@@ -216,13 +216,13 @@
                     start: '{{ emp.data_inicio|date:"Y-m-d" }}',
                     end: '{{ emp.data_final|date:"Y-m-d" }}',
                     {% if emp.status == 'ativo' %}
-                        color: '{% if emp.data_final < hoje %}#b91c1c{% else %}#1a4fd6{% endif %}',
+                        color: '{% if emp.data_final < hoje %}#ad1925{% else %}#5cb680{% endif %}',
                     {% elif emp.status == 'finalizado' %}
                         color: '#9aa1ac',
                     {% elif emp.status == 'pendente' %}
                         color: '#b45309',
                     {% else %}
-                        color: '#b91c1c',
+                        color: '#ad1925',
                     {% endif %}
                     extendedProps: {
                         status: '{{ emp.get_status_display }}',
@@ -284,9 +284,9 @@
         </td>
         <td style="text-align: right; padding-right: 20px">
           {% if item.tipo == 'item' %}
-            <a href="{% url 'appointment:solicitar_agendamento' %}?equipamento={{ item.obj.pk }}" class="btn btn-sm btn-primary">Agendar Data</a>
+            <a href="{% url 'solicitar_emprestimo' item.obj.pk %}" class="btn btn-sm btn-primary">Solicitar</a>
           {% else %}
-            <a href="{% url 'appointment:solicitar_agendamento' %}?livro={{ item.obj.pk }}" class="btn btn-sm btn-primary">Agendar Data</a>
+            <a href="{% url 'solicitar_livro' item.obj.pk %}" class="btn btn-sm btn-primary">Solicitar</a>
           {% endif %}
         </td>
       </tr>
@@ -525,7 +525,7 @@
         </td>
         {% endif %}
         <td>
-            <div style="font-weight: 500">{{ debito.item }}</div>
+            <div style="font-weight: 500">{{ debito.item_display }}</div>
             <div style="font-size: 11px; color: var(--text3)">{{ debito.item.setor.nome }}</div>
         </td>
         <td>{{ debito.data_inicio|date:"d/m/Y" }}</td>

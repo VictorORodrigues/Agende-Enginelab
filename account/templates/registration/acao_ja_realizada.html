@@ -1,9 +1,10 @@
 {% extends "account/base.html" %}
+{% load static %}
 {% block title %}Ação já realizada — EngineLab UFC{% endblock %}
 {% block content %}
 <div class="auth-wrap" style="padding-top:60px;padding-bottom:60px">
   <div class="auth-card" style="max-width:460px;text-align:center">
-    <div class="auth-logo">L</div>
+    <div class="auth-logo"><img src="{% static 'enginelab/img/logo-icon.png' %}" alt="EngineLab"></div>
     <div class="auth-title">Ação já realizada</div>
     {% if mensagem_personalizada %}
       <div class="auth-sub" style="margin-bottom:20px">

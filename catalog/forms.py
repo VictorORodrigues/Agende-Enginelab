@@ -30,7 +30,7 @@ class CategoriaForm(forms.ModelForm):
 class EquipamentoForm(forms.ModelForm):
     class Meta:
         model = Equipamento
-        fields = ['nome', 'setor', 'categoria', 'status', 'identificador', 'descricao']
+        fields = ['nome', 'setor', 'categoria', 'identificador', 'descricao']
         widgets = {
             'nome': forms.TextInput(attrs={'maxlength': '100'}),
             'identificador': forms.TextInput(attrs={'maxlength': '50'}),
@@ -59,7 +59,7 @@ class EquipamentoForm(forms.ModelForm):
 class LivroForm(forms.ModelForm):
     class Meta:
         model = Livro
-        fields = ['titulo', 'autor', 'setor', 'categoria', 'isbn', 'status', 'exemplares']
+        fields = ['titulo', 'autor', 'setor', 'categoria', 'isbn', 'exemplares']
         widgets = {
             'titulo': forms.TextInput(attrs={'maxlength': '150'}),
             'autor': forms.TextInput(attrs={'maxlength': '150'}),

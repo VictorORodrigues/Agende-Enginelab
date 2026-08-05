@@ -1,9 +1,10 @@
 {% extends "account/base.html" %}
+{% load static %}
 {% block title %}Resultado da aprovação — EngineLab UFC{% endblock %}
 {% block content %}
 <div class="auth-wrap" style="padding-top:60px;padding-bottom:60px">
   <div class="auth-card" style="max-width:460px;text-align:center">
-    <div class="auth-logo">L</div>
+    <div class="auth-logo"><img src="{% static 'enginelab/img/logo-icon.png' %}" alt="EngineLab"></div>
     {% if acao == 'aprovado' %}
       <div class="auth-title">Ação realizada com sucesso</div>
       <div class="auth-sub" style="margin-bottom:20px">

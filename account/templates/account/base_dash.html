@@ -4,13 +4,14 @@
 <head>
   <meta charset="utf-8">
   <title>{% block title %}EngineLab UFC{% endblock %}</title>
+  <link rel="icon" type="image/png" href="{% static 'enginelab/img/favicon-32.png' %}">
   <link rel="stylesheet" href="{% static 'account/css/base.css' %}">
   <link rel="stylesheet" href="{% static 'account/css/dash.css' %}">
   <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
 </head>
 <body>
   <div class="topbar">
-    <a class="topbar-brand" href="{% url 'admin_equipamentos' %}"><span>L</span> EngineLab UFC</a>
+    <a class="topbar-brand" href="{% url 'admin_equipamentos' %}"><img src="{% static 'enginelab/img/logo-icon.png' %}" alt="EngineLab"> EngineLab UFC</a>
     <div class="topbar-actions">
       <div class="profile-wrap">
         <button class="topbar-user profile-btn" id="profileBtn" type="button">
@@ -46,10 +47,6 @@
     <nav class="sidebar">
       <div style="padding:8px 6px">
         <div class="sidebar-section">Geral</div>
-        <a class="nav-item {% if request.resolver_match.url_name == 'meus_agendamentos' %}active{% endif %}" href="{% url 'appointment:meus_agendamentos' %}">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="10" height="10" rx="1"/><path d="M3 7h10M8 10v4M5 2v4M11 2v4"/></svg>
-          Agendamento
-        </a>
         <div class="nav-group">
           <a class="nav-item {% if request.resolver_match.url_name == 'meus_emprestimos' %}active{% endif %}" href="{% url 'meus_emprestimos' %}?aba=historico" onclick="toggleNavGroup(event, this)">
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z"/><path d="M5 6h6M5 9h4"/></svg>
@@ -80,10 +77,6 @@
 
         {% if request.user.perfil.eh_subadm or request.user.perfil.eh_admin %}
         <div class="sidebar-section">Administração</div>
-        <a class="nav-item {% if request.resolver_match.url_name == 'gerenciar_agendamentos' %}active{% endif %}" href="{% url 'appointment:gerenciar_agendamentos' %}">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 3h12v2H2zM2 7h12v2H2zM2 11h12v2H2z"/></svg>
-          Agendamentos
-        </a>
         <a class="nav-item {% if request.resolver_match.url_name == 'admin_emprestimos' %}active{% endif %}" href="{% url 'admin_emprestimos' %}">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z"/><path d="M5 6h6M5 9h4"/></svg>
           Empréstimos
@@ -113,6 +106,8 @@
       </div>
       <div class="nav-spacer"></div>
     </nav>
+
+    <div class="sidebar-resizer" id="sidebarResizer" title="Arraste para redimensionar"></div>
 
     <main class="main">
       {% if messages %}
@@ -223,6 +218,46 @@
           chevron.style.transform = 'rotate(0deg)';
       }
     }
+
+    // Redimensionar sidebar arrastando a borda
+    (function () {
+      var sidebar = document.querySelector('.sidebar');
+      var resizer = document.getElementById('sidebarResizer');
+      if (!sidebar || !resizer) return;
+
+      var MIN_WIDTH = 160;
+      var MAX_WIDTH = 420;
+      var STORAGE_KEY = 'sidebarWidth';
+
+      var savedWidth = localStorage.getItem(STORAGE_KEY);
+      if (savedWidth) {
+        sidebar.style.width = savedWidth + 'px';
+      }
+
+      var dragging = false;
+
+      resizer.addEventListener('mousedown', function (e) {
+        dragging = true;
+        resizer.classList.add('resizing');
+        document.body.classList.add('sidebar-resizing');
+        e.preventDefault();
+      });
+
+      document.addEventListener('mousemove', function (e) {
+        if (!dragging) return;
+        var rect = sidebar.getBoundingClientRect();
+        var newWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, e.clientX - rect.left));
+        sidebar.style.width = newWidth + 'px';
+      });
+
+      document.addEventListener('mouseup', function () {
+        if (!dragging) return;
+        dragging = false;
+        resizer.classList.remove('resizing');
+        document.body.classList.remove('sidebar-resizing');
+        localStorage.setItem(STORAGE_KEY, parseInt(sidebar.style.width, 10));
+      });
+    })();
 
     // Mantém aberto se estiver em uma das sub-abas
     document.addEventListener('DOMContentLoaded', function() {

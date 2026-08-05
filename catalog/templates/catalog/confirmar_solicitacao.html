@@ -34,8 +34,26 @@
           </div>
       {% else %}
           <div class="form-group">
+            <label class="form-label" for="data_inicio">Data de início do uso</label>
+            <input type="date" name="data_inicio" id="data_inicio" class="form-input" required>
+          </div>
+          <div class="form-group">
             <label class="form-label" for="data_final">Data de devolução prevista</label>
             <input type="date" name="data_final" id="data_final" class="form-input" required>
+          </div>
+          <div class="form-check">
+            <input type="checkbox" name="dia_inteiro" id="dia_inteiro" checked onchange="document.getElementById('horarios').style.display = this.checked ? 'none' : 'flex'">
+            <label for="dia_inteiro">Dia inteiro</label>
+          </div>
+          <div id="horarios" style="display:none; gap:12px">
+            <div class="form-group" style="flex:1">
+              <label class="form-label" for="hora_inicio">Hora de início</label>
+              <input type="time" name="hora_inicio" id="hora_inicio" class="form-input">
+            </div>
+            <div class="form-group" style="flex:1">
+              <label class="form-label" for="hora_fim">Hora de fim</label>
+              <input type="time" name="hora_fim" id="hora_fim" class="form-input">
+            </div>
           </div>
       {% endif %}
 
@@ -56,10 +74,26 @@
   nextMonth.setDate(now.getDate() + 30);
   const maxDate = nextMonth.toISOString().split('T')[0];
 
-  const dateInput = document.querySelector('input[type="date"]');
-  if (dateInput) {
-      dateInput.setAttribute('min', today);
-      dateInput.setAttribute('max', maxDate);
+  document.querySelectorAll('input[type="date"]').forEach(function (el) {
+    el.setAttribute('min', today);
+  });
+
+  const dataInicioInput = document.getElementById('data_inicio');
+  const dataFinalInput = document.getElementById('data_final');
+  if (dataInicioInput && dataFinalInput) {
+    dataInicioInput.setAttribute('max', maxDate);
+    function sincronizarDataFinal() {
+      const inicio = dataInicioInput.value || today;
+      dataFinalInput.setAttribute('min', inicio);
+      const limite = new Date(inicio + 'T00:00:00');
+      limite.setDate(limite.getDate() + 30);
+      dataFinalInput.setAttribute('max', limite.toISOString().split('T')[0]);
+    }
+    dataInicioInput.addEventListener('change', sincronizarDataFinal);
+    sincronizarDataFinal();
+  } else {
+    const soloDataFinal = document.querySelector('input[type="date"]');
+    if (soloDataFinal) soloDataFinal.setAttribute('max', maxDate);
   }
 
   // Impede múltiplos cliques no botão de solicitar

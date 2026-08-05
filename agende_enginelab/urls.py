@@ -51,6 +51,5 @@ urlpatterns = [
         name='password_reset_complete',
     ),
     path('account/', include('account.urls')),
-    path('appointment/', include('appointment.urls')),
     path('', include('catalog.urls')),
 ]

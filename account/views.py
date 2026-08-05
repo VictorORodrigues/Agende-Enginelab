@@ -157,7 +157,7 @@ def recusar_via_token(request, token):
         f'Olá {perfil.user.first_name}, seu cadastro não foi aprovado.',
         config('EMAIL_HOST_USER'),
         [perfil.user.email],
-        html_message=render_to_string('emails/email_recusado.html', {'user': perfil.user}),
+        html_message=render_to_string('emails/email_recusado.html', {'user': perfil.user, 'header_cor': '#ad1925'}),
         fail_silently=True,
     )
     return render(request, 'registration/resultado_aprovacao.html', {
@@ -216,7 +216,7 @@ def recusar_usuario(request, pk):
             f'Olá {perfil.user.first_name}, seu cadastro não foi aprovado.',
             config('EMAIL_HOST_USER'),
             [perfil.user.email],
-            html_message=render_to_string('emails/email_recusado.html', {'user': perfil.user}),
+            html_message=render_to_string('emails/email_recusado.html', {'user': perfil.user, 'header_cor': '#ad1925'}),
             fail_silently=True,
         )
         messages.warning(request, f'Cadastro de {perfil.user.get_full_name()} recusado.')
@@ -422,7 +422,7 @@ def excluir_conta(request):
         user.delete()
         messages.success(request, 'Sua conta foi excluída com sucesso.')
         return redirect('login')
-    return redirect('admin_equipamentos')
+    return redirect('meus_emprestimos')
 
 
 @login_required

@@ -12,14 +12,14 @@ class CategoriaAdmin(admin.ModelAdmin):
 @admin.register(Equipamento)
 class EquipamentoAdmin(admin.ModelAdmin):
     list_display = ('nome', 'identificador', 'categoria', 'status')
-    list_filter = ('status', 'categoria')
+    list_filter = ('categoria',)
     search_fields = ('nome', 'identificador')
 
 
 @admin.register(Livro)
 class LivroAdmin(admin.ModelAdmin):
     list_display = ('titulo', 'autor', 'categoria', 'status', 'exemplares')
-    list_filter = ('status', 'categoria')
+    list_filter = ('categoria',)
     search_fields = ('titulo', 'autor', 'isbn')
 
 

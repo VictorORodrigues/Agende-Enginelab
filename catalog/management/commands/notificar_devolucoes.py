@@ -38,6 +38,7 @@ class Command(BaseCommand):
             html_user = render_to_string('emails/email_vencimento_emprestimo.html', {
                 'emprestimo': emprestimo,
                 'renovar_url': renovar_url,
+                'header_cor': '#b45309',
             })
 
             try:
@@ -56,7 +57,8 @@ class Command(BaseCommand):
         # 2. Notifica o Admin com a lista completa do dia
         html_admin = render_to_string('emails/email_vencimento_admin.html', {
             'emprestimos': emprestimos_vencendo,
-            'data': hoje.strftime('%d/%m/%Y')
+            'data': hoje.strftime('%d/%m/%Y'),
+            'header_cor': '#b45309',
         })
 
         try:

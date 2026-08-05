@@ -1,6 +1,7 @@
 {% extends "account/base_dash.html" %}
 {% load widget_tweaks %}
 {% block content %}
+{{ categorias_setor_map|json_script:"categorias-setor-map" }}
 <div class="page-header">
   <div><div class="page-title">{% if modo == 'criar' %}Cadastrar item{% else %}Editar item{% endif %}</div></div>
   <a class="btn" href="{% url 'admin_equipamentos' %}">Voltar</a>
@@ -41,4 +42,32 @@
     </form>
   {% endif %}
 </div>
+
+<script>
+  (function () {
+    var categoriasPorSetor = JSON.parse(document.getElementById('categorias-setor-map').textContent);
+    var setorField = document.getElementById('id_setor');
+    var categoriaField = document.getElementById('id_categoria');
+    if (!setorField || !categoriaField) return;
+
+    var todasOpcoes = Array.from(categoriaField.options);
+
+    function filtrar() {
+      var setorId = setorField.value;
+      var valorAtual = categoriaField.value;
+      categoriaField.innerHTML = '';
+      todasOpcoes.forEach(function (opt) {
+        if (!opt.value || String(categoriasPorSetor[opt.value]) === String(setorId)) {
+          categoriaField.appendChild(opt.cloneNode(true));
+        }
+      });
+      if (Array.from(categoriaField.options).some(function (o) { return o.value === valorAtual; })) {
+        categoriaField.value = valorAtual;
+      }
+    }
+
+    setorField.addEventListener('change', filtrar);
+    filtrar();
+  })();
+</script>
 {% endblock %}

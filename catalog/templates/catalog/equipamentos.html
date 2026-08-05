@@ -61,12 +61,10 @@
           {% endif %}
 
           {% if request.user.perfil.eh_aluno %}
-            {% if equipamento.status == 'disponivel' %}
-            <a class="btn btn-sm btn-primary" href="{% url 'solicitar_emprestimo' equipamento.pk %}">Solicitar empréstimo</a>
-            {% elif equipamento.pk in meus_emprestimos_ids %}
+            {% if equipamento.pk in meus_emprestimos_ids %}
             <span class="badge badge-gray">Item já com você</span>
             {% else %}
-            <a class="btn btn-sm btn-primary" href="{% url 'appointment:solicitar_agendamento' %}?equipamento={{ equipamento.pk }}">Agendar</a>
+            <a class="btn btn-sm btn-primary" href="{% url 'solicitar_emprestimo' equipamento.pk %}">Solicitar empréstimo</a>
             {% endif %}
           {% endif %}
         </td>

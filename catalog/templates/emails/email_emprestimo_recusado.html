@@ -1,24 +1,15 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Empréstimo não aprovado</title>
-</head>
-<body style="margin:0;padding:0;background:#f4f7f6;font-family:Arial,sans-serif;">
-  <table align="center" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;background:#ffffff;margin-top:20px;border-radius:8px;overflow:hidden;">
-    <tr>
-      <td style="padding:24px;background:#d6361a;color:#ffffff;text-align:center;">
-        <h1 style="margin:0;font-size:26px;">EngineLab UFC</h1>
-      </td>
-    </tr>
-    <tr>
-      <td style="padding:32px;">
-        <h2 style="margin-top:0;color:#d6361a;">Empréstimo não aprovado</h2>
-        <p>Olá, {{ emprestimo.usuario.first_name }}.</p>
-        <p>Seu pedido de empréstimo de <strong>{{ emprestimo.item }}</strong> não foi aprovado pelo administrador.</p>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>
+{% extends "emails/base_email.html" %}
+{% block titulo %}Empréstimo não aprovado{% endblock %}
+{% block conteudo %}
+<div style="text-align:center;">
+  <div style="display:inline-block;width:64px;height:64px;background-color:#f6e8e9;border-radius:50%;margin-bottom:24px;">
+    <div style="padding-top:16px;">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ad1925" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    </div>
+  </div>
+  <h1 style="margin:0 0 12px 0;color:#1f2328;font-size:22px;font-weight:600;">Empréstimo não aprovado</h1>
+  <p style="margin:0;color:#6b7280;font-size:16px;line-height:1.6;">
+    Olá, <strong>{{ emprestimo.usuario.first_name }}</strong>. Seu pedido de empréstimo de <strong>{{ emprestimo.item_display }}</strong> não foi aprovado pelo administrador.
+  </p>
+</div>
+{% endblock %}

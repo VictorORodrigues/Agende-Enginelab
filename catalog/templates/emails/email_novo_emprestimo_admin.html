@@ -1,53 +1,30 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Nova solicitação de empréstimo</title>
-</head>
-<body style="margin:0;padding:0;background:#f4f7f6;font-family:Arial,sans-serif;">
-  <table align="center" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;background:#ffffff;margin-top:20px;border-radius:8px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.08);border:1px solid #e5e7eb;">
+{% extends "emails/base_email.html" %}
+{% load email_tags %}
+{% block titulo %}Nova solicitação de empréstimo{% endblock %}
+{% block conteudo %}
+<h1 style="margin:0 0 12px 0;color:#1f2328;font-size:20px;font-weight:600;text-align:center;">Nova solicitação de empréstimo</h1>
+<p style="color:#6b7280;font-size:15px;line-height:1.5;text-align:center;margin-bottom:32px;">
+  <strong>{{ emprestimo.usuario.get_full_name }}</strong> solicitou o empréstimo de um item:
+</p>
+
+<div style="background-color:#f9fafb;border:1px solid #f3f4f6;border-radius:12px;padding:24px;margin-bottom:32px;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
     <tr>
-      <td style="padding:32px 24px;background:#1a4fd6;color:#ffffff;text-align:center;">
-        <h1 style="margin:0;font-size:24px;font-weight:600;">EngineLab UFC</h1>
-      </td>
+      <td style="padding-bottom:12px;color:#6b7280;font-size:13px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;width:35%;">Item</td>
+      <td style="padding-bottom:12px;color:#1f2328;font-size:15px;font-weight:600;">{{ emprestimo.item_display }}</td>
     </tr>
     <tr>
-      <td style="padding:40px 32px;">
-        <h2 style="margin-top:0;color:#1f2328;font-size:20px;font-weight:600;text-align:center;">Nova solicitação de empréstimo</h2>
-        <p style="color:#6b7280;font-size:15px;line-height:1.5;text-align:center;margin-bottom:32px;">
-          <strong>{{ emprestimo.usuario.get_full_name }}</strong> solicitou o empréstimo de um item:
-        </p>
-
-        <div style="background-color:#f9fafb;border:1px solid #f3f4f6;border-radius:12px;padding:24px;margin-bottom:32px;">
-          <table width="100%" cellpadding="0" cellspacing="0" border="0">
-            <tr>
-              <td style="padding-bottom:12px;color:#6b7280;font-size:13px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;width:35%;">Item</td>
-              <td style="padding-bottom:12px;color:#1f2328;font-size:15px;font-weight:600;">{{ emprestimo.item }}</td>
-            </tr>
-            <tr>
-              <td style="color:#6b7280;font-size:13px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;">Devolução prevista</td>
-              <td style="color:#1f2328;font-size:15px;font-weight:600;">{{ emprestimo.data_final|date:"d/m/Y" }}</td>
-            </tr>
-          </table>
-        </div>
-
-        <!-- Ações -->
-        <div style="text-align:center;margin-bottom:32px;">
-          <a href="{{ aprovar_url }}" style="display:inline-block;background-color:#15803d;color:#ffffff !important;padding:14px 32px;border-radius:8px;text-decoration:none;font-size:15px;font-weight:600;margin:0 8px;box-shadow:0 2px 4px rgba(21,128,61,0.2);">Aprovar Empréstimo</a>
-          <a href="{{ recusar_url }}" style="display:inline-block;background-color:#b91c1c;color:#ffffff !important;padding:14px 32px;border-radius:8px;text-decoration:none;font-size:15px;font-weight:600;margin:0 8px;box-shadow:0 2px 4px rgba(185,28,28,0.2);">Recusar</a>
-        </div>
-
-        <p style="margin:0;color:#9aa1ac;font-size:12px;line-height:1.5;text-align:center;">
-          Você também pode gerenciar esta solicitação acessando o painel administrativo do sistema.
-        </p>
-      </td>
-    </tr>
-    <tr>
-      <td style="padding:24px;background-color:#f9fafb;border-top:1px solid #e5e7eb;text-align:center;">
-        <p style="margin:0;color:#9aa1ac;font-size:12px;">&copy; 2024 EngineLab UFC. Todos os direitos reservados.</p>
-      </td>
+      <td style="color:#6b7280;font-size:13px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;">Devolução prevista</td>
+      <td style="color:#1f2328;font-size:15px;font-weight:600;">{{ emprestimo.data_final|date:"d/m/Y" }}</td>
     </tr>
   </table>
-</body>
-</html>
+</div>
+
+<div style="margin-bottom:32px;">
+  {% email_botoes aprovar_url "Aprovar Empréstimo" recusar_url "Recusar" %}
+</div>
+
+<p style="margin:0;color:#9aa1ac;font-size:12px;line-height:1.5;text-align:center;">
+  Você também pode gerenciar esta solicitação acessando o painel administrativo do sistema.
+</p>
+{% endblock %}

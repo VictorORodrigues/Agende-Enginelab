@@ -12,7 +12,7 @@ def requer_admin(view_func):
         perfil = getattr(request.user, 'perfil', None)
         if not (perfil and perfil.eh_admin):
             messages.error(request, 'Você não tem permissão para acessar esta área.')
-            return redirect('admin_equipamentos')
+            return redirect('meus_emprestimos')
         return view_func(request, *args, **kwargs)
     return _wrapped
 
@@ -25,7 +25,7 @@ def requer_subadm(view_func):
         perfil = getattr(request.user, 'perfil', None)
         if not (perfil and (perfil.eh_subadm or perfil.eh_admin)):
             messages.error(request, 'Você não tem permissão para acessar esta área.')
-            return redirect('admin_equipamentos')
+            return redirect('meus_emprestimos')
         return view_func(request, *args, **kwargs)
     return _wrapped
 
@@ -39,7 +39,7 @@ def requer_permissao_subadmin(escopo):
             perfil = getattr(request.user, 'perfil', None)
             if not (perfil and perfil.tem_permissao(escopo)):
                 messages.error(request, 'Você não tem permissão para acessar esta área.')
-                return redirect('admin_equipamentos')
+                return redirect('meus_emprestimos')
             return view_func(request, *args, **kwargs)
         return _wrapped
     return decorator

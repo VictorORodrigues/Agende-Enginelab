@@ -1,50 +1,30 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Convite de Sub-Administrador</title>
-</head>
-<body style="margin:0;padding:0;background-color:#f4f5f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-  <div style="max-width:600px;margin:40px auto;background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.08);border:1px solid #e5e7eb;">
-    <!-- Header -->
-    <div style="padding:32px 24px;background-color:#1a4fd6;text-align:center;">
-      <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:600;letter-spacing:-0.02em;">EngineLab UFC</h1>
-    </div>
+{% extends "emails/base_email.html" %}
+{% load email_tags %}
+{% block titulo %}Convite de acesso{% endblock %}
+{% block conteudo %}
+<h1 style="margin:0 0 12px 0;color:#1f2328;font-size:22px;font-weight:600;text-align:center;">Convite de acesso</h1>
+<p style="margin:0 0 24px 0;color:#6b7280;font-size:16px;line-height:1.6;">
+  Olá, você foi nomeado sub-administrador do sistema Agende EngineLab UFC.
+</p>
 
-    <!-- Content -->
-    <div style="padding:40px 32px;">
-      <h2 style="margin:0 0 12px 0;color:#1f2328;font-size:22px;font-weight:600;text-align:center;">Convite de acesso</h2>
-      <p style="margin:0 0 24px 0;color:#6b7280;font-size:16px;line-height:1.6;">
-        Olá, você foi nomeado sub-administrador do sistema Agende EngineLab UFC.
-      </p>
+<div style="background-color:#f9fafb;border:1px solid #f3f4f6;border-radius:12px;padding:24px;margin-bottom:32px;">
+  <p style="margin:0 0 12px 0;color:#1f2328;font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Suas Permissões:</p>
+  <ul style="margin:0;padding:0 0 0 20px;color:#6b7280;font-size:15px;line-height:1.8;">
+    {% for perm in permissoes %}
+      <li>{{ perm }}</li>
+    {% endfor %}
+  </ul>
+</div>
 
-      <div style="background-color:#f9fafb;border:1px solid #f3f4f6;border-radius:12px;padding:24px;margin-bottom:32px;">
-        <p style="margin:0 0 12px 0;color:#1f2328;font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Suas Permissões:</p>
-        <ul style="margin:0;padding:0 0 0 20px;color:#6b7280;font-size:15px;line-height:1.8;">
-          {% for perm in permissoes %}
-            <li>{{ perm }}</li>
-          {% endfor %}
-        </ul>
-      </div>
+<p style="margin:0 0 32px 0;color:#6b7280;font-size:15px;line-height:1.5;">
+  Para começar a gerenciar o laboratório, você precisa definir seus dados de acesso. Clique no botão abaixo:
+</p>
 
-      <p style="margin:0 0 32px 0;color:#6b7280;font-size:15px;line-height:1.5;">
-        Para começar a gerenciar o laboratório, você precisa definir seus dados de acesso. Clique no botão abaixo:
-      </p>
+<div style="margin-bottom:32px;">
+  {% email_botao reset_link "Completar Meu Perfil" %}
+</div>
 
-      <div style="text-align:center;margin-bottom:32px;">
-        <a href="{{ reset_link }}" style="display:inline-block;background-color:#1a4fd6;color:#ffffff !important;padding:16px 40px;border-radius:8px;text-decoration:none;font-size:15px;font-weight:600;box-shadow:0 2px 4px rgba(26,79,214,0.2);">Completar Meu Perfil</a>
-      </div>
-
-      <p style="margin:0;color:#9aa1ac;font-size:13px;line-height:1.5;text-align:center;">
-        Se você não esperava este convite, por favor entre em contato com a administração.
-      </p>
-    </div>
-
-    <!-- Footer -->
-    <div style="padding:24px;background-color:#f9fafb;border-top:1px solid #e5e7eb;text-align:center;">
-      <p style="margin:0;color:#9aa1ac;font-size:12px;">&copy; 2024 EngineLab UFC. Todos os direitos reservados.</p>
-    </div>
-  </div>
-</body>
-</html>
+<p style="margin:0;color:#9aa1ac;font-size:13px;line-height:1.5;text-align:center;">
+  Se você não esperava este convite, por favor entre em contato com a administração.
+</p>
+{% endblock %}

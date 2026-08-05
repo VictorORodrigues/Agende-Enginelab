@@ -25,6 +25,7 @@ class Command(BaseCommand):
             try:
                 html_message = render_to_string('emails/email_atraso_notificacao.html', {
                     'emprestimo': emp,
+                    'header_cor': '#ad1925',
                 })
 
                 send_mail(
