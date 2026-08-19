@@ -2,6 +2,15 @@
 
 Sistema de gestão para o laboratório EngineLab UFC: controle de empréstimo de itens (equipamentos, notebooks, livros) por setor, com aprovação por administradores/sub-administradores, renovação, notificações por e-mail e controle de permissões por setor.
 
+## Objetivos
+
+- Centralizar o controle de empréstimo de itens do laboratório (equipamentos, notebooks, livros), substituindo controle manual/planilhas.
+- Organizar o acervo por setores, com permissões específicas para quem pode gerenciar cada um.
+- Formalizar o fluxo de solicitação → aprovação → devolução/renovação de empréstimos, com histórico rastreável.
+- Delegar a administração a sub-administradores por setor, mantendo controle centralizado para administradores gerais.
+- Reduzir atrasos e esquecimentos por meio de notificações automáticas por e-mail (itens atrasados, devoluções do dia, novos cadastros/solicitações pendentes).
+- Manter o acesso seguro, com aprovação de novos cadastros e proteção contra força bruta no login.
+
 ## Stack
 
 - Python / Django 6
